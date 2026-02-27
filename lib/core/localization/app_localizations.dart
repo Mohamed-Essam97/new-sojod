@@ -142,6 +142,18 @@ class AppLocalizations {
       'exactAlarmRequired': 'Exact Alarm Required',
       'exactAlarmMessage': 'For accurate prayer time notifications, please allow exact alarms in system settings.',
       'openSettings': 'Open Settings',
+      // Mood-Based Adhkar
+      'howAreYouFeeling': 'How are you feeling today?',
+      'selectYourMood': 'Select your mood',
+      'moodAnxious': 'Anxious',
+      'moodGrateful': 'Grateful',
+      'moodSad': 'Sad',
+      'moodMotivated': 'Motivated',
+      'recommendedForYou': 'Recommended for you',
+      'duas': 'Duas',
+      'ayahs': 'Ayahs',
+      'dhikr': 'Dhikr',
+      'moodBasedRecommendations': 'Mood-Based Recommendations',
     },
     'ar': {
       'appName': 'المؤمن',
@@ -272,6 +284,18 @@ class AppLocalizations {
       'exactAlarmRequired': 'مطلوب تنبيه دقيق',
       'exactAlarmMessage': 'للحصول على إشعارات دقيقة لأوقات الصلاة، يرجى السماح بالتنبيهات الدقيقة في إعدادات النظام.',
       'openSettings': 'فتح الإعدادات',
+      // Mood-Based Adhkar
+      'howAreYouFeeling': 'كيف تشعر اليوم؟',
+      'selectYourMood': 'اختر مزاجك',
+      'moodAnxious': 'قلق',
+      'moodGrateful': 'ممتن',
+      'moodSad': 'حزين',
+      'moodMotivated': 'متحمس',
+      'recommendedForYou': 'موصى به لك',
+      'duas': 'الأدعية',
+      'ayahs': 'الآيات',
+      'dhikr': 'الذكر',
+      'moodBasedRecommendations': 'توصيات مبنية على المزاج',
     },
   };
 

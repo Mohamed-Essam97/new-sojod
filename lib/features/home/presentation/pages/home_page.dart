@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../mood_adhkar/presentation/widgets/mood_selection_card.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../widgets/home_header.dart';
@@ -128,6 +129,9 @@ class _HomeView extends StatelessWidget {
                   ),
                 ),
               ],
+              const SliverToBoxAdapter(
+                child: MoodSelectionCard(),
+              ),
               if (state.lastReadPage > 1)
                 SliverToBoxAdapter(
                   child: Padding(
