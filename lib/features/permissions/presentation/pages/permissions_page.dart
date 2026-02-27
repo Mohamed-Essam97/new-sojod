@@ -69,7 +69,7 @@ class PermissionsPage extends StatelessWidget {
               TextButton(
                 onPressed: () async {
                   await sl<SettingsRepository>().setPermissionsGranted(true);
-                  if (context.mounted) context.go('/home');
+                  if (context.mounted) context.push('/home');
                 },
                 child: Text(
                   'Skip',
@@ -87,9 +87,10 @@ class PermissionsPage extends StatelessWidget {
   Future<void> _grantPermissions(BuildContext context) async {
     await Permission.location.request();
     await Permission.notification.request();
+    await Permission.scheduleExactAlarm.request();
     await sl<SettingsRepository>().setPermissionsGranted(true);
     if (context.mounted) {
-      context.go('/home');
+      context.push('/home');
     }
   }
 }

@@ -7,4 +7,6 @@ abstract class SettingsRepository {
   Future<void> setLocale(Locale locale);
   bool getPermissionsGranted();
   Future<void> setPermissionsGranted(bool value);
+  String getSelectedReciter();
+  Future<void> setSelectedReciter(String reciter);
 }

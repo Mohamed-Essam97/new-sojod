@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/adhkar_category_entity.dart';
 import '../cubit/adhkar_cubit.dart';
 import '../cubit/adhkar_state.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../cubit/adhkar_cubit.dart';
+import '../widgets/adhkar_detail_page.dart';
+import '../widgets/adhkar_header.dart';
+import '../widgets/category_card.dart';
 
 class AdhkarPage extends StatelessWidget {
   const AdhkarPage({super.key});
@@ -20,49 +23,9 @@ class AdhkarPage extends StatelessWidget {
   }
 }
 
-void _showCategorySheet(
-  BuildContext context,
-  String categoryId,
-  AdhkarState state,
-) {
-  final cat = state.categories.firstWhere((c) => c.id == categoryId);
-  final isAr = Localizations.localeOf(context).languageCode == 'ar';
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (ctx) => DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      expand: false,
-      builder: (_, controller) => Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              isAr ? cat.nameAr : cat.nameEn,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              controller: controller,
-              itemCount: cat.dhikrs.length,
-              itemBuilder: (_, i) {
-                final d = cat.dhikrs[i];
-                return ListTile(
-                  title: Text(
-                    d.arabic,
-                    textDirection: TextDirection.rtl,
-                  ),
-                  subtitle: d.translation != null ? Text(d.translation!) : null,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Category listing view
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _AdhkarView extends StatelessWidget {
   const _AdhkarView();
@@ -70,41 +33,74 @@ class _AdhkarView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.translate('adhkar')),
-      ),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: BlocBuilder<AdhkarCubit, AdhkarState>(
         builder: (context, state) {
-          final categories = state.categories;
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: categories.length,
-            itemBuilder: (context, i) {
-              final cat = categories[i];
-              final completed = state.getCompleted(cat.id);
-              final total = state.getTotal(cat.id);
-              final name = isAr ? cat.nameAr : cat.nameEn;
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.teal.withOpacity(0.2),
-                    child: Text('$completed/$total'),
+          return CustomScrollView(
+            slivers: [
+              AdhkarHeader(l10n: l10n),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                sliver: SliverGrid(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 1.05,
                   ),
-                  title: Text(name),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () => _showCategorySheet(context, cat.id, state),
+                  delegate: SliverChildBuilderDelegate(
+                    (ctx, i) {
+                      final cat = state.categories[i];
+                      final completed = state.getCompleted(cat.id);
+                      final total = state.getTotal(cat.id);
+                      return CategoryCard(
+                        category: cat,
+                        completed: completed,
+                        total: total,
+                        onTap: () => _openDetail(context, cat),
+                      );
+                    },
+                    childCount: state.categories.length,
+                  ),
                 ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),
     );
   }
+
+  void _openDetail(
+    BuildContext context,
+    AdhkarCategoryEntity cat,
+  ) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (ctx, anim, _) => BlocProvider.value(
+          value: BlocProvider.of<AdhkarCubit>(context),
+          child: AdhkarDetailPage(category: cat),
+        ),
+        transitionsBuilder: (ctx, anim, _, child) {
+          return FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.06, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
+              child: child,
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 280),
+      ),
+    );
+  }
 }
+

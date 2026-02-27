@@ -12,6 +12,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           themeMode: _repository.getThemeMode(),
           locale: _repository.getLocale(),
           permissionsGranted: _repository.getPermissionsGranted(),
+          selectedReciter: _repository.getSelectedReciter(),
         ));
 
   void setThemeMode(ThemeMode mode) async {
@@ -29,11 +30,17 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(state.copyWith(permissionsGranted: value));
   }
 
+  Future<void> setSelectedReciter(String reciter) async {
+    await _repository.setSelectedReciter(reciter);
+    emit(state.copyWith(selectedReciter: reciter));
+  }
+
   void loadSettings() {
     emit(SettingsState(
       themeMode: _repository.getThemeMode(),
       locale: _repository.getLocale(),
       permissionsGranted: _repository.getPermissionsGranted(),
+      selectedReciter: _repository.getSelectedReciter(),
     ));
   }
 }

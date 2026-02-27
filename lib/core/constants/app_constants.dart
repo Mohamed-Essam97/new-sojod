@@ -35,4 +35,20 @@ class AppConstants {
   static const String keyLocationLat = 'location_lat';
   static const String keyLocationLng = 'location_lng';
   static const String keyLocationName = 'location_name';
+
+  // Notification settings
+  static const String keyPrayerNotifFajr = 'notif_prayer_fajr';
+  static const String keyPrayerNotifDhuhr = 'notif_prayer_dhuhr';
+  static const String keyPrayerNotifAsr = 'notif_prayer_asr';
+  static const String keyPrayerNotifMaghrib = 'notif_prayer_maghrib';
+  static const String keyPrayerNotifIsha = 'notif_prayer_isha';
+  static const String keyAdhkarMorningEnabled = 'notif_adhkar_morning_enabled';
+  static const String keyAdhkarMorningHour = 'notif_adhkar_morning_hour';
+  static const String keyAdhkarMorningMinute = 'notif_adhkar_morning_minute';
+  static const String keyAdhkarEveningEnabled = 'notif_adhkar_evening_enabled';
+  static const String keyAdhkarEveningHour = 'notif_adhkar_evening_hour';
+  static const String keyAdhkarEveningMinute = 'notif_adhkar_evening_minute';
+  static const String keyAdhkarSleepEnabled = 'notif_adhkar_sleep_enabled';
+  static const String keyAdhkarSleepHour = 'notif_adhkar_sleep_hour';
+  static const String keyAdhkarSleepMinute = 'notif_adhkar_sleep_minute';
 }

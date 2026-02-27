@@ -46,4 +46,42 @@ class AppColors {
   static const Color blueText = Color(0xFF1565C0);
   static const Color pinkBackground = Color(0xFFFCE4EC);
   static const Color pinkText = Color(0xFFC2185B);
+
+  // Semantic accent colors (adhkar categories, settings icons, etc.)
+  static const Color amber = Color(0xFFF59E0B);
+  static const Color indigo = Color(0xFF6366F1);
+  static const Color rose = Color(0xFFEC4899);
+  static const Color violet = Color(0xFF8B5CF6);
+  static const Color emerald = Color(0xFF22C55E);
+  static const Color sky = Color(0xFF3B82F6);
+  static const Color tealAccent = Color(0xFF14B8A6);
+  static const Color red = Color(0xFFEF4444);
+
+  /// Theme-aware surface (scaffold/card background).
+  static Color surface(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkBackground
+        : lightBackground;
+  }
+
+  /// Theme-aware primary text on surface.
+  static Color onSurfaceColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? textPrimaryDark
+        : textPrimaryLight;
+  }
+
+  /// Theme-aware secondary/muted text on surface.
+  static Color onSurfaceMutedColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? textSecondaryDark
+        : textSecondaryLight;
+  }
+
+  /// Theme-aware card background.
+  static Color card(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkCard
+        : lightCard;
+  }
 }

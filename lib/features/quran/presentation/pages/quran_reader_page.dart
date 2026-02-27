@@ -1,14 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:quran_with_tafsir/quran_with_tafsir.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/quran_reading_theme.dart';
 import '../cubit/quran_cubit.dart';
 import '../cubit/quran_state.dart';
+import '../widgets/floating_audio_player.dart';
+import '../widgets/page_content.dart';
+import '../widgets/reader_bottom_bar.dart';
+import '../widgets/reader_settings_sheet.dart';
+import '../widgets/reader_top_bar.dart';
 
 class QuranReaderPage extends StatefulWidget {
   final int initialPage;
@@ -45,7 +51,10 @@ class _QuranReaderPageState extends State<QuranReaderPage> {
   }
 }
 
-class _QuranReaderView extends StatelessWidget {
+// ─────────────────────────────────────────────────
+// Reader view (stateful to manage bars, selection, playback)
+// ─────────────────────────────────────────────────
+class _QuranReaderView extends StatefulWidget {
   final int initialPage;
   final AudioPlayer audioPlayer;
 
@@ -55,275 +64,284 @@ class _QuranReaderView extends StatelessWidget {
   });
 
   @override
+  State<_QuranReaderView> createState() => _QuranReaderViewState();
+}
+
+class _QuranReaderViewState extends State<_QuranReaderView> {
+  late final PageController _pageController;
+
+  bool _barsVisible = true;
+  int _currentPage = 1;
+  bool _isPlayingSurah = false;
+
+  // Current surah info shown in the top bar
+  String _currentSurahNameAr = '';
+  String _currentSurahNameEn = '';
+  int _currentJuz = 1;
+
+  // Track playing surah metadata for the floating player display
+  String _playingSurahName = '';
+  int _playingTotalAyahs = 0;
+  final _playingIndexNotifier = ValueNotifier<int>(0);
+
+  /// Notifier for the currently tapped (selected) ayah — used for highlight.
+  final _selectedAyahNotifier = ValueNotifier<int?>(null);
+
+  /// Notifier for the ayah currently being played — used for playing highlight.
+  final _playingAyahNotifier = ValueNotifier<int?>(null);
+
+  StreamSubscription<int?>? _indexSub;
+  StreamSubscription<PlayerState>? _playerStateSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPage = widget.initialPage;
+    _pageController = PageController(initialPage: widget.initialPage - 1);
+    // Load surah info after the first frame so context is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadSurahInfo(context, _currentPage);
+    });
+  }
+
+  void _loadSurahInfo(BuildContext context, int page) {
+    final cubit = context.read<QuranCubit>();
+    final ayahs = cubit.getPage(page);
+    if (ayahs.isEmpty) return;
+    final surahNumber = ayahs.first.surahNumber;
+    final juz = ayahs.first.juz;
+    final surahs = cubit.getSurahs();
+    final meta = surahs.firstWhere(
+      (s) => s.number == surahNumber,
+      orElse: () => surahs.first,
+    );
+    setState(() {
+      _currentSurahNameAr = meta.nameAr;
+      _currentSurahNameEn = meta.nameEn;
+      _currentJuz = juz;
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _selectedAyahNotifier.dispose();
+    _playingAyahNotifier.dispose();
+    _playingIndexNotifier.dispose();
+    _indexSub?.cancel();
+    _playerStateSub?.cancel();
+    super.dispose();
+  }
+
+  void _toggleBars() => setState(() => _barsVisible = !_barsVisible);
+
+  // ── Play entire surah ──────────────────────────────────────────────────────
+  Future<void> _stopPlayback() async {
+    await widget.audioPlayer.stop();
+    _indexSub?.cancel();
+    _playerStateSub?.cancel();
+    _playingAyahNotifier.value = null;
+    _playingIndexNotifier.value = 0;
+    setState(() => _isPlayingSurah = false);
+  }
+
+  Future<void> _togglePlaySurah(BuildContext context) async {
+    if (_isPlayingSurah) {
+      await _stopPlayback();
+      return;
+    }
+
+    final cubit = context.read<QuranCubit>();
+    final pageAyahs = cubit.getPage(_currentPage);
+    if (pageAyahs.isEmpty) return;
+
+    final surahNumber = pageAyahs.first.surahNumber;
+    final surah = cubit.getSurah(surahNumber);
+    if (surah.verses.isEmpty) return;
+
+    // Resolve surah name for the floating player
+    final surahs = cubit.getSurahs();
+    final meta = surahs.firstWhere(
+      (s) => s.number == surahNumber,
+      orElse: () => surahs.first,
+    );
+
+    final playlist = ConcatenatingAudioSource(
+      children: surah.verses
+          .map((v) => AudioSource.uri(
+                Uri.parse(cubit.getAudioUrl(surahNumber, v.id)),
+              ))
+          .toList(),
+    );
+
+    await widget.audioPlayer.setAudioSource(playlist);
+
+    _indexSub?.cancel();
+    _indexSub = widget.audioPlayer.currentIndexStream.listen((index) {
+      if (index != null && index < surah.verses.length) {
+        _playingAyahNotifier.value = surah.verses[index].id;
+        _playingIndexNotifier.value = index;
+      }
+    });
+
+    _playerStateSub?.cancel();
+    _playerStateSub = widget.audioPlayer.playerStateStream.listen((ps) {
+      if (ps.processingState == ProcessingState.completed) {
+        _indexSub?.cancel();
+        _playingAyahNotifier.value = null;
+        _playingIndexNotifier.value = 0;
+        if (mounted) setState(() => _isPlayingSurah = false);
+      }
+    });
+
+    setState(() {
+      _isPlayingSurah = true;
+      _playingSurahName = meta.nameAr;
+      _playingTotalAyahs = surah.verses.length;
+    });
+    widget.audioPlayer.play();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<QuranCubit, QuranState>(
       builder: (context, state) {
-        final s = state as QuranState? ?? QuranState.initial();
         final themeType = QuranReadingThemeType.values.firstWhere(
-          (e) => e.name == s.readingTheme,
+          (e) => e.name == state.readingTheme,
           orElse: () => QuranReadingThemeType.sepia,
         );
         final bgColor = themeType.background;
         final textColor = themeType.textColor;
 
-        return Scaffold(
-          backgroundColor: bgColor,
-          appBar: AppBar(
-            title: const Text('Quran'),
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: themeType == QuranReadingThemeType.dark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark,
+          child: Scaffold(
             backgroundColor: bgColor,
-            foregroundColor: textColor,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.tune),
-                onPressed: () => _showReaderSettings(context),
-              ),
-            ],
-          ),
-          body: PageView.builder(
-            controller: PageController(initialPage: initialPage - 1),
-            onPageChanged: (i) {
-              context.read<QuranCubit>().setLastReadPage(i + 1);
-            },
-            itemCount: 604,
-            itemBuilder: (context, index) {
-              final page = index + 1;
-              final ayahs = context.read<QuranCubit>().getPage(page);
-              return _PageView(
-                page: page,
-                ayahs: ayahs,
-                fontSize: s.fontSize,
-                textColor: textColor,
-                audioPlayer: audioPlayer,
-                cubit: context.read<QuranCubit>(),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  void _showReaderSettings(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) {
-        return BlocProvider.value(
-          value: context.read<QuranCubit>(),
-          child: _ReaderSettingsSheet(),
-        );
-      },
-    );
-  }
-}
-
-class _PageView extends StatelessWidget {
-  final int page;
-  final List<Ayah> ayahs;
-  final double fontSize;
-  final Color textColor;
-  final AudioPlayer audioPlayer;
-  final QuranCubit cubit;
-
-  const _PageView({
-    required this.page,
-    required this.ayahs,
-    required this.fontSize,
-    required this.textColor,
-    required this.audioPlayer,
-    required this.cubit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ...ayahs.map((ayah) => _AyahTile(
-                ayah: ayah,
-                fontSize: fontSize,
-                textColor: textColor,
-                audioPlayer: audioPlayer,
-                cubit: cubit,
-              )),
-          const SizedBox(height: 24),
-          Text(
-            '— $page —',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: textColor.withOpacity(0.7)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AyahTile extends StatelessWidget {
-  final Ayah ayah;
-  final double fontSize;
-  final Color textColor;
-  final AudioPlayer audioPlayer;
-  final QuranCubit cubit;
-
-  const _AyahTile({
-    required this.ayah,
-    required this.fontSize,
-    required this.textColor,
-    required this.audioPlayer,
-    required this.cubit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showAyahSheet(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: AppColors.teal.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  '${ayah.id}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: textColor,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                ayah.text,
-                textDirection: TextDirection.rtl,
-                style: TextStyle(
-                  fontFamily: 'QuranFont',
-                  fontSize: fontSize,
-                  height: 2.0,
-                  color: textColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAyahSheet(BuildContext context) {
-    final tafsir = cubit.getTafsir(ayah.surahNumber)[ayah.id];
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        expand: false,
-        builder: (_, controller) => SingleChildScrollView(
-          controller: controller,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                ayah.text,
-                textDirection: TextDirection.rtl,
-                style: const TextStyle(
-                  fontFamily: 'QuranFont',
-                  fontSize: 24,
-                  height: 2.0,
-                ),
-              ),
-              if (tafsir != null) ...[
-                const SizedBox(height: 16),
-                Text('Tafsir', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(
-                  tafsir,
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(
-                    fontFamily: 'TafsirFont',
-                    fontSize: 16,
-                    height: 1.8,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            body: GestureDetector(
+              onTap: _toggleBars,
+              child: Stack(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.bookmark_add),
-                    onPressed: () {
-                      cubit.toggleBookmark(ayah.surahNumber, ayah.id);
+                  // ── Main reading area ──────────────────────────────
+                  PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (i) {
+                      final page = i + 1;
+                      setState(() => _currentPage = page);
+                      context.read<QuranCubit>().setLastReadPage(page);
+                      _loadSurahInfo(context, page);
+                      // Stop surah playback when page changes
+                      if (_isPlayingSurah) {
+                        widget.audioPlayer.stop();
+                        _indexSub?.cancel();
+                        _playerStateSub?.cancel();
+                        _playingAyahNotifier.value = null;
+                        _isPlayingSurah = false;
+                      }
+                    },
+                    itemCount: 604,
+                    itemBuilder: (context, index) {
+                      final page = index + 1;
+                      final ayahs = context.read<QuranCubit>().getPage(page);
+                      return PageContent(
+                        page: page,
+                        ayahs: ayahs,
+                        fontSize: state.fontSize,
+                        textColor: textColor,
+                        bgColor: bgColor,
+                        audioPlayer: widget.audioPlayer,
+                        cubit: context.read<QuranCubit>(),
+                        selectedAyahNotifier: _selectedAyahNotifier,
+                        playingAyahNotifier: _playingAyahNotifier,
+                      );
                     },
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.volume_up),
-                    onPressed: () async {
-                      final url = cubit.getAudioUrl(ayah.surahNumber, ayah.id);
-                      await audioPlayer.setUrl(url);
-                      audioPlayer.play();
-                    },
+
+                  // ── Top bar ──────────────────────────────────────
+                  AnimatedSlide(
+                    offset: _barsVisible ? Offset.zero : const Offset(0, -1),
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeInOut,
+                    child: ReaderTopBar(
+                      page: _currentPage,
+                      juz: _currentJuz,
+                      surahNameAr: _currentSurahNameAr,
+                      surahNameEn: _currentSurahNameEn,
+                      bgColor: bgColor,
+                      textColor: textColor,
+                      onSettings: () => _showSettings(context),
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.share),
-                    onPressed: () {},
+
+                  // ── Floating audio player ────────────────────────
+                  Positioned(
+                    left: 24,
+                    right: 24,
+                    bottom: 72,
+                    child: FloatingAudioPlayer(
+                      isPlaying: _isPlayingSurah,
+                      surahName: _playingSurahName,
+                      totalAyahs: _playingTotalAyahs,
+                      playingIndexNotifier: _playingIndexNotifier,
+                      audioPlayer: widget.audioPlayer,
+                      l10n: AppLocalizations.of(context),
+                      onPlay: () => _togglePlaySurah(context),
+                      onStop: _stopPlayback,
+                    ),
+                  ),
+
+                  // ── Bottom bar ───────────────────────────────────
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: AnimatedSlide(
+                      offset: _barsVisible ? Offset.zero : const Offset(0, 1),
+                      duration: const Duration(milliseconds: 240),
+                      curve: Curves.easeInOut,
+                      child: ReaderBottomBar(
+                        page: _currentPage,
+                        l10n: AppLocalizations.of(context),
+                        bgColor: bgColor,
+                        textColor: textColor,
+                        onPrev: () {
+                          if (_currentPage > 1) {
+                            _pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                        onNext: () {
+                          if (_currentPage < 604) {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReaderSettingsSheet extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<QuranCubit, QuranState>(
-      builder: (context, state) {
-        final s = state as QuranState? ?? QuranState.initial();
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Font Size: ${s.fontSize.toInt()}'),
-              Slider(
-                value: s.fontSize,
-                min: 16,
-                max: 36,
-                onChanged: (v) => context.read<QuranCubit>().setFontSize(v),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                children: QuranReadingThemeType.values.map((t) {
-                  final selected = s.readingTheme == t.name;
-                  return ChoiceChip(
-                    label: Text(t.name),
-                    selected: selected,
-                    onSelected: (_) =>
-                        context.read<QuranCubit>().setReadingTheme(t.name),
-                  );
-                }).toList(),
-              ),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  void _showSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => BlocProvider.value(
+        value: context.read<QuranCubit>(),
+        child: const ReaderSettingsSheet(),
+      ),
     );
   }
 }

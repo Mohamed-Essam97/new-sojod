@@ -20,6 +20,10 @@ import '../../features/hijri/presentation/cubit/hijri_cubit.dart';
 import '../../features/tasbeeh/data/repositories/tasbeeh_repository_impl.dart';
 import '../../features/tasbeeh/domain/repositories/tasbeeh_repository.dart';
 import '../../features/tasbeeh/presentation/cubit/tasbeeh_cubit.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/data/services/notification_service.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/presentation/cubit/notification_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -63,6 +67,20 @@ Future<void> initInjection() async {
     () => TasbeehRepositoryImpl(sharedPreferences: sl()),
   );
   sl.registerFactory<TasbeehCubit>(() => TasbeehCubit(sl()));
+
+  // Notifications
+  sl.registerLazySingleton<NotificationService>(
+    () => NotificationService(),
+  );
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      prefs: sl(),
+      service: sl<NotificationService>(),
+    ),
+  );
+  sl.registerFactory<NotificationCubit>(
+    () => NotificationCubit(sl(), sl<PrayerService>()),
+  );
 
   // Home
   sl.registerFactory<HomeCubit>(() => HomeCubit(sl(), sl(), sl(), sl()));

@@ -3,10 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../cubit/quran_cubit.dart';
 import '../cubit/quran_state.dart';
+import '../widgets/juz_grid.dart';
+import '../widgets/quran_header.dart';
+import '../widgets/search_and_tabs.dart';
+import '../widgets/surah_list.dart';
 
 class QuranPage extends StatelessWidget {
   const QuranPage({super.key});
@@ -20,163 +24,105 @@ class QuranPage extends StatelessWidget {
   }
 }
 
-class _QuranView extends StatelessWidget {
+class _QuranView extends StatefulWidget {
   const _QuranView();
+
+  @override
+  State<_QuranView> createState() => _QuranViewState();
+}
+
+class _QuranViewState extends State<_QuranView>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  int _activeTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(() {
+        if (_tabController.indexIsChanging) return;
+        setState(() {
+          _activeTab = _tabController.index;
+          _searchQuery = '';
+          _searchController.clear();
+        });
+      });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.translate('quran')),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: l10n.translate('readQuran')),
-              const Tab(text: 'Surah'),
-              const Tab(text: 'Juz'),
+    return BlocBuilder<QuranCubit, QuranState>(
+      builder: (context, state) {
+        final cubit = context.read<QuranCubit>();
+        final surahs = cubit.getSurahs();
+        final filtered = _searchQuery.isEmpty
+            ? surahs
+            : surahs.where((s) =>
+                s.nameEn.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                s.nameAr.contains(_searchQuery) ||
+                s.number.toString() == _searchQuery).toList();
+
+        return Scaffold(
+          backgroundColor: AppColors.surface(context),
+          body: Column(
+            children: [
+              QuranHeader(
+                lastPage: state.lastReadPage,
+                l10n: l10n,
+                onContinue: () =>
+                    context.push('/quran/reader?page=${state.lastReadPage}'),
+              ),
+              SearchAndTabs(
+                tabController: _tabController,
+                activeTab: _activeTab,
+                searchController: _searchController,
+                searchQuery: _searchQuery,
+                l10n: l10n,
+                onSearch: (q) => setState(() => _searchQuery = q),
+                onTabTap: (i) => _tabController.animateTo(i),
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    SurahList(
+                      surahs: filtered,
+                      l10n: l10n,
+                      onTap: (number) {
+                        final surah = cubit.getSurah(number);
+                        final page = surah.verses.isNotEmpty
+                            ? surah.verses.first.page
+                            : 1;
+                        context.push('/quran/reader?page=$page');
+                      },
+                    ),
+                    JuzGrid(
+                      l10n: l10n,
+                      onTap: (juz) {
+                        final ayahs = cubit.getJuz(juz);
+                        if (ayahs.isNotEmpty) {
+                          context
+                              .push('/quran/reader?page=${ayahs.first.page}');
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        body: BlocBuilder<QuranCubit, QuranState>(
-          builder: (context, state) {
-            final lastPage = state.lastReadPage;
-            return TabBarView(
-              children: [
-                _ContinueReadingTab(
-                  lastPage: lastPage,
-                  onTap: () => context.go('/quran/reader?page=$lastPage'),
-                ),
-                _SurahListTab(cubit: context.read<QuranCubit>()),
-                _JuzListTab(cubit: context.read<QuranCubit>()),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _ContinueReadingTab extends StatelessWidget {
-  final int lastPage;
-  final VoidCallback onTap;
-
-  const _ContinueReadingTab({
-    required this.lastPage,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Card(
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: AppColors.teal.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.menu_book, color: AppColors.teal, size: 32),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Continue Reading',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text(
-                          'Page $lastPage',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, size: 16),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SurahListTab extends StatelessWidget {
-  final QuranCubit cubit;
-
-  const _SurahListTab({required this.cubit});
-
-  @override
-  Widget build(BuildContext context) {
-    final surahs = cubit.getSurahs();
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: surahs.length,
-      itemBuilder: (context, i) {
-        final s = surahs[i];
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: AppColors.teal.withOpacity(0.2),
-            child: Text('${s.number}'),
-          ),
-          title: Text(s.nameEn),
-          subtitle: Text(s.nameAr, textDirection: TextDirection.rtl),
-          trailing: Text('${s.ayahCount} verses'),
-          onTap: () {
-            final surah = cubit.getSurah(s.number);
-            final page = surah.verses.isNotEmpty ? surah.verses.first.page : 1;
-            context.go('/quran/reader?page=$page');
-          },
-        );
-      },
-    );
-  }
-}
-
-class _JuzListTab extends StatelessWidget {
-  final QuranCubit cubit;
-
-  const _JuzListTab({required this.cubit});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: 30,
-      itemBuilder: (context, i) {
-        final juz = i + 1;
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: AppColors.teal.withOpacity(0.2),
-            child: Text('$juz'),
-          ),
-          title: Text('Juz $juz'),
-          onTap: () {
-            final ayahs = cubit.getJuz(juz);
-            if (ayahs.isNotEmpty) {
-              context.go('/quran/reader?page=${ayahs.first.page}');
-            }
-          },
         );
       },
     );

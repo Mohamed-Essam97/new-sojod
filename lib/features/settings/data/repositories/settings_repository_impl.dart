@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quran_with_tafsir/quran_with_tafsir.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -44,5 +45,15 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<void> setPermissionsGranted(bool value) async {
     await sharedPreferences.setBool(AppConstants.keyPermissionsGranted, value);
+  }
+
+  @override
+  String getSelectedReciter() =>
+      sharedPreferences.getString(AppConstants.keyQuranReciter) ??
+      Reciters.alafasy;
+
+  @override
+  Future<void> setSelectedReciter(String reciter) async {
+    await sharedPreferences.setString(AppConstants.keyQuranReciter, reciter);
   }
 }

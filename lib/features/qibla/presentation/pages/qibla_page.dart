@@ -1,12 +1,17 @@
 import 'dart:async';
-import 'dart:math' as math;
+
 import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../widgets/compass_widget.dart';
+import '../widgets/direction_hint.dart';
+import '../widgets/info_row.dart';
+import '../widgets/kaaba_card.dart';
+import '../widgets/qibla_header.dart';
 
 class QiblaPage extends StatefulWidget {
   const QiblaPage({super.key});
@@ -15,22 +20,36 @@ class QiblaPage extends StatefulWidget {
   State<QiblaPage> createState() => _QiblaPageState();
 }
 
-class _QiblaPageState extends State<QiblaPage> {
-  double? _heading;
+class _QiblaPageState extends State<QiblaPage>
+    with SingleTickerProviderStateMixin {
+  double _heading = 0;
   double? _qiblaDirection;
-  StreamSubscription<CompassEvent>? _compassSubscription;
+  bool _isLoading = true;
+  String? _locationName;
+  StreamSubscription<CompassEvent>? _compassSub;
+
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     _initCompass();
     _calculateQibla();
   }
 
-  Future<void> _initCompass() async {
-    _compassSubscription = FlutterCompass.events?.listen((event) {
-      if (event.heading != null) {
-        setState(() => _heading = event.heading);
+  void _initCompass() {
+    _compassSub = FlutterCompass.events?.listen((event) {
+      if (event.heading != null && mounted) {
+        setState(() => _heading = (event.heading! + 180) % 360);
       }
     });
   }
@@ -38,104 +57,93 @@ class _QiblaPageState extends State<QiblaPage> {
   Future<void> _calculateQibla() async {
     try {
       final pos = await Geolocator.getCurrentPosition();
-      final coordinates = Coordinates(pos.latitude, pos.longitude);
-      final qibla = Qibla(coordinates);
-      setState(() => _qiblaDirection = qibla.direction);
+      final coords = Coordinates(pos.latitude, pos.longitude);
+      final qibla = Qibla(coords);
+      if (mounted) {
+        setState(() {
+          _qiblaDirection = qibla.direction;
+          _isLoading = false;
+          _locationName =
+              '${pos.latitude.toStringAsFixed(3)}°, ${pos.longitude.toStringAsFixed(3)}°';
+        });
+      }
     } catch (_) {
-      setState(() => _qiblaDirection = 0);
+      if (mounted) {
+        setState(() {
+          _qiblaDirection = 0;
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
-    _compassSubscription?.cancel();
+    _compassSub?.cancel();
+    _pulseController.dispose();
     super.dispose();
   }
 
+  double get _angleDiff {
+    if (_qiblaDirection == null) return 180;
+    double diff = (_qiblaDirection! - _heading) % 360;
+    if (diff > 180) diff -= 360;
+    return diff;
+  }
+
+  bool get _isAligned => _angleDiff.abs() < 5;
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
+    final directionHint = DirectionHint.buildHint(l10n, _angleDiff);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.translate('qibla')),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 250,
-              height: 250,
-              child: CustomPaint(
-                painter: _CompassPainter(
-                  heading: _heading ?? 0,
-                  qiblaDirection: _qiblaDirection ?? 0,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              _qiblaDirection != null
-                  ? 'Qibla: ${_qiblaDirection!.toStringAsFixed(1)}°'
-                  : 'Calculating...',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ],
-        ),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      body: Column(
+        children: [
+          QiblaHeader(isDark: isDark, locationName: _locationName),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.teal),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        InfoRow(
+                          heading: _heading,
+                          qibla: _qiblaDirection ?? 0,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(height: 32),
+                        CompassWidget(
+                          heading: _heading,
+                          qiblaDirection: _qiblaDirection ?? 0,
+                          isDark: isDark,
+                          isAligned: _isAligned,
+                          pulseAnimation: _pulseAnimation,
+                        ),
+                        const SizedBox(height: 32),
+                        DirectionHint(
+                          hint: directionHint,
+                          isAligned: _isAligned,
+                          angleDiff: _angleDiff,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(height: 24),
+                        KaabaCard(isDark: isDark),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
-}
-
-class _CompassPainter extends CustomPainter {
-  final double heading;
-  final double qiblaDirection;
-
-  _CompassPainter({required this.heading, required this.qiblaDirection});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 10;
-
-    // Background circle
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..color = AppColors.teal.withOpacity(0.2)
-        ..style = PaintingStyle.fill,
-    );
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..color = AppColors.teal
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-    );
-
-    // Qibla indicator (arrow to Kaaba)
-    final qiblaAngle = (qiblaDirection - heading) * math.pi / 180;
-    final qiblaEnd = Offset(
-      center.dx + radius * math.sin(qiblaAngle),
-      center.dy - radius * math.cos(qiblaAngle),
-    );
-    canvas.drawLine(
-      center,
-      qiblaEnd,
-      Paint()
-        ..color = AppColors.teal
-        ..strokeWidth = 4
-        ..strokeCap = StrokeCap.round,
-    );
-
-    // Center dot
-    canvas.drawCircle(center, 8, Paint()..color = AppColors.teal);
-  }
-
-  @override
-  bool shouldRepaint(covariant _CompassPainter old) =>
-      old.heading != heading || old.qiblaDirection != qiblaDirection;
 }
