@@ -129,9 +129,9 @@ class _HomeView extends StatelessWidget {
                   ),
                 ),
               ],
-              const SliverToBoxAdapter(
-                child: MoodSelectionCard(),
-              ),
+              // const SliverToBoxAdapter(
+              //   child: MoodSelectionCard(),
+              // ),
               if (state.lastReadPage > 1)
                 SliverToBoxAdapter(
                   child: Padding(
