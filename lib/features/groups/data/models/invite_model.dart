@@ -26,6 +26,7 @@ class InviteModel extends InviteEntity {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'code': code,
       'groupId': groupId,
       'createdBy': createdBy,
       'expiresAt': expiresAt != null ? Timestamp.fromDate(expiresAt!) : null,

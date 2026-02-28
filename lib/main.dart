@@ -13,6 +13,7 @@ import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/notifications/data/services/notification_service.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
+import 'features/wird/presentation/cubit/wird_cubit.dart';
 import 'firebase_options.dart';
 
 late final GoRouter _appRouter;
@@ -38,6 +39,7 @@ class AlMuminApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<SettingsCubit>()..loadSettings()),
         BlocProvider(create: (_) => sl<AudioPlayerCubit>()),
         BlocProvider(create: (_) => sl<AuthCubit>()..checkAuthStatus()),
+        BlocProvider.value(value: sl<WirdCubit>()),
       ],
       child: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -16,12 +19,14 @@ class AuthRepositoryImpl implements AuthRepository {
   })  : _firebaseAuth = firebaseAuth,
         _firestore = firestore,
         _googleSignIn = googleSignIn,
-        _facebookAuth = facebookAuth;
+        _facebookAuth = facebookAuth,
+        _storage = FirebaseStorage.instance;
 
   final FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
   final FacebookAuth _facebookAuth;
+  final FirebaseStorage _storage;
 
   @override
   Future<UserEntity?> signInWithGoogle() async {
@@ -153,12 +158,29 @@ class AuthRepositoryImpl implements AuthRepository {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser == null) return;
 
-    await firebaseUser.updateDisplayName(displayName);
-    await firebaseUser.updatePhotoURL(photoUrl);
+    if (displayName != null) await firebaseUser.updateDisplayName(displayName);
+    if (photoUrl != null) await firebaseUser.updatePhotoURL(photoUrl);
 
     await _firestore.collection('users').doc(firebaseUser.uid).update({
       if (displayName != null) 'displayName': displayName,
       if (photoUrl != null) 'photoUrl': photoUrl,
     });
+  }
+
+  @override
+  Future<String> uploadProfileImage(String filePath) async {
+    final firebaseUser = _firebaseAuth.currentUser;
+    if (firebaseUser == null) throw Exception('Not authenticated');
+
+    final file = File(filePath);
+    final ref = _storage.ref().child('profile_images/${firebaseUser.uid}.jpg');
+
+    final uploadTask = await ref.putFile(
+      file,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+
+    final downloadUrl = await uploadTask.ref.getDownloadURL();
+    return downloadUrl;
   }
 }

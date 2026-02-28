@@ -7,10 +7,15 @@ import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/quran_reading_theme.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../reciters/domain/entities/reciter.dart';
 import '../../../reciters/domain/repositories/reciter_repository.dart';
 import '../../../reciters/presentation/widgets/reciter_selection_sheet.dart';
+import '../../../wird/presentation/cubit/wird_cubit.dart';
+import '../../../wird/presentation/cubit/wird_state.dart';
 import '../cubit/quran_cubit.dart';
 import '../cubit/quran_state.dart';
 import '../widgets/floating_audio_player.dart';
@@ -352,6 +357,8 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
                       setState(() => _currentPage = page);
                       context.read<QuranCubit>().setLastReadPage(page);
                       _loadSurahInfo(context, page);
+                      // Track page for Wird progress
+                      _trackWirdPage(context, page);
                       // Stop surah playback when page changes
                       if (_isPlayingSurah) {
                         widget.audioPlayer.stop();
@@ -415,6 +422,14 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
                     ),
                   ),
 
+                  // ── Wird progress pill ──────────────────────────
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 52,
+                    child: _WirdProgressPill(barsVisible: _barsVisible),
+                  ),
+
                   // ── Bottom bar ───────────────────────────────────
                   Positioned(
                     left: 0,
@@ -457,6 +472,13 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
     );
   }
 
+  void _trackWirdPage(BuildContext context, int page) {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) {
+      sl<WirdCubit>().trackPageRead(page);
+    }
+  }
+
   void _showSettings(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -466,6 +488,82 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
         value: context.read<QuranCubit>(),
         child: const ReaderSettingsSheet(),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────
+// Wird Progress Pill - shown in the reader
+// ─────────────────────────────────────────────────
+class _WirdProgressPill extends StatelessWidget {
+  const _WirdProgressPill({required this.barsVisible});
+
+  final bool barsVisible;
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is! AuthAuthenticated) return const SizedBox.shrink();
+
+    return BlocBuilder<WirdCubit, WirdState>(
+      builder: (context, state) {
+        if (state is! WirdLoaded) return const SizedBox.shrink();
+        final wird = state.wird;
+        if (wird.quranTargetPages <= 0) return const SizedBox.shrink();
+
+        final isComplete = wird.isQuranComplete;
+
+        return AnimatedSlide(
+          offset: barsVisible ? Offset.zero : const Offset(0, 3),
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeInOut,
+          child: Center(
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: isComplete
+                    ? AppColors.teal.withValues(alpha: 0.9)
+                    : Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isComplete
+                        ? Icons.check_circle_rounded
+                        : Icons.menu_book_rounded,
+                    color: Colors.white,
+                    size: 15,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${wird.quranProgressPages}/${wird.quranTargetPages}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (isComplete) ...[
+                    const SizedBox(width: 4),
+                    const Text('✓',
+                        style:
+                            TextStyle(color: Colors.white, fontSize: 11)),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -55,6 +55,13 @@ class GroupRepositoryImpl implements GroupRepository {
     );
     await memberDoc.set(member.toFirestore());
 
+    await _firestore
+        .collection('users')
+        .doc(ownerId)
+        .collection('memberships')
+        .doc(groupDoc.id)
+        .set({'groupId': groupDoc.id, 'joinedAt': FieldValue.serverTimestamp()});
+
     return group;
   }
 
@@ -76,10 +83,12 @@ class GroupRepositoryImpl implements GroupRepository {
   Future<void> deleteGroup(String groupId) async {
     final groupDoc = _firestore.collection('groups').doc(groupId);
     final membersSnapshot = await groupDoc.collection('members').get();
+    final batch = _firestore.batch();
     for (final doc in membersSnapshot.docs) {
-      await doc.reference.delete();
+      batch.delete(doc.reference);
     }
-    await groupDoc.delete();
+    batch.delete(groupDoc);
+    await batch.commit();
   }
 
   @override
@@ -98,23 +107,24 @@ class GroupRepositoryImpl implements GroupRepository {
         .where('ownerId', isEqualTo: userId)
         .get();
 
-    final groups = groupsQuery.docs.map((doc) => GroupModel.fromFirestore(doc)).toList();
+    final groups =
+        groupsQuery.docs.map((doc) => GroupModel.fromFirestore(doc)).toList();
+    final seenIds = groups.map((g) => g.id).toSet();
 
-    final memberQuery = await _firestore
-        .collectionGroup('members')
-        .where(FieldPath.documentId, isEqualTo: userId)
+    final membershipsSnapshot = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('memberships')
         .get();
 
-    for (final memberDoc in memberQuery.docs) {
-      final groupId = memberDoc.reference.parent.parent?.id;
-      if (groupId != null) {
-        final groupDoc = await _firestore.collection('groups').doc(groupId).get();
-        if (groupDoc.exists) {
-          final group = GroupModel.fromFirestore(groupDoc);
-          if (!groups.any((g) => g.id == group.id)) {
-            groups.add(group);
-          }
-        }
+    for (final doc in membershipsSnapshot.docs) {
+      final groupId = doc.id;
+      if (seenIds.contains(groupId)) continue;
+      seenIds.add(groupId);
+      final groupDoc =
+          await _firestore.collection('groups').doc(groupId).get();
+      if (groupDoc.exists) {
+        groups.add(GroupModel.fromFirestore(groupDoc));
       }
     }
 
@@ -156,7 +166,7 @@ class GroupRepositoryImpl implements GroupRepository {
   @override
   Future<InviteEntity?> getInviteByCode(String code) async {
     final invitesSnapshot = await _firestore.collectionGroup('invites')
-        .where(FieldPath.documentId, isEqualTo: code)
+        .where('code', isEqualTo: code)
         .limit(1)
         .get();
 
@@ -169,7 +179,7 @@ class GroupRepositoryImpl implements GroupRepository {
   @override
   Future<void> useInvite(String code) async {
     final invitesSnapshot = await _firestore.collectionGroup('invites')
-        .where(FieldPath.documentId, isEqualTo: code)
+        .where('code', isEqualTo: code)
         .limit(1)
         .get();
 
@@ -190,11 +200,25 @@ class GroupRepositoryImpl implements GroupRepository {
       joinedAt: DateTime.now(),
     );
     await memberDoc.set(member.toFirestore());
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('memberships')
+        .doc(groupId)
+        .set({'groupId': groupId, 'joinedAt': FieldValue.serverTimestamp()});
   }
 
   @override
   Future<void> leaveGroup(String groupId, String userId) async {
-    await _firestore.collection('groups').doc(groupId).collection('members').doc(userId).delete();
+    final batch = _firestore.batch();
+    batch.delete(
+        _firestore.collection('groups').doc(groupId).collection('members').doc(userId));
+    batch.delete(_firestore
+        .collection('users')
+        .doc(userId)
+        .collection('memberships')
+        .doc(groupId));
+    await batch.commit();
   }
 
   @override

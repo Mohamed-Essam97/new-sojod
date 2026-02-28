@@ -7,4 +7,5 @@ abstract class AuthRepository {
   Future<UserEntity?> getCurrentUser();
   Stream<UserEntity?> get authStateChanges;
   Future<void> updateProfile({String? displayName, String? photoUrl});
+  Future<String> uploadProfileImage(String filePath);
 }

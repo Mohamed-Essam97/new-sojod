@@ -24,6 +24,7 @@ class GroupMemberModel extends GroupMemberEntity {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'uid': uid,
       'displayName': displayName,
       'role': role,
       'photoUrl': photoUrl,

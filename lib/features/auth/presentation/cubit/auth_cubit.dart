@@ -8,6 +8,7 @@ import '../../domain/usecases/sign_in_with_facebook.dart';
 import '../../domain/usecases/sign_in_with_google.dart';
 import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/update_profile.dart';
+import '../../domain/usecases/upload_profile_image.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -17,12 +18,14 @@ class AuthCubit extends Cubit<AuthState> {
     required SignOut signOut,
     required GetCurrentUser getCurrentUser,
     required UpdateProfile updateProfile,
+    required UploadProfileImage uploadProfileImage,
     required AuthRepository authRepository,
   })  : _signInWithGoogle = signInWithGoogle,
         _signInWithFacebook = signInWithFacebook,
         _signOut = signOut,
         _getCurrentUser = getCurrentUser,
         _updateProfile = updateProfile,
+        _uploadProfileImage = uploadProfileImage,
         _authRepository = authRepository,
         super(const AuthInitial()) {
     _authStateSubscription = _authRepository.authStateChanges.listen((user) {
@@ -39,6 +42,7 @@ class AuthCubit extends Cubit<AuthState> {
   final SignOut _signOut;
   final GetCurrentUser _getCurrentUser;
   final UpdateProfile _updateProfile;
+  final UploadProfileImage _uploadProfileImage;
   final AuthRepository _authRepository;
 
   StreamSubscription? _authStateSubscription;
@@ -98,6 +102,20 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> updateUserProfile({String? displayName, String? photoUrl}) async {
     try {
       await _updateProfile(displayName: displayName, photoUrl: photoUrl);
+      final user = await _getCurrentUser();
+      if (user != null) {
+        emit(AuthAuthenticated(user));
+      }
+    } catch (e) {
+      emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> uploadAndUpdateProfileImage(String filePath) async {
+    try {
+      emit(const AuthLoading());
+      final photoUrl = await _uploadProfileImage(filePath);
+      await _updateProfile(photoUrl: photoUrl);
       final user = await _getCurrentUser();
       if (user != null) {
         emit(AuthAuthenticated(user));

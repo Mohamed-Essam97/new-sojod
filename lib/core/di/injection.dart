@@ -18,6 +18,7 @@ import '../../features/auth/domain/usecases/sign_in_with_facebook.dart';
 import '../../features/auth/domain/usecases/sign_in_with_google.dart';
 import '../../features/auth/domain/usecases/sign_out.dart';
 import '../../features/auth/domain/usecases/update_profile.dart';
+import '../../features/auth/domain/usecases/upload_profile_image.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/hijri/data/repositories/hijri_repository_impl.dart';
 import '../../features/hijri/domain/repositories/hijri_repository.dart';
@@ -73,7 +74,12 @@ Future<void> initInjection() async {
   // Firebase
   sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
-  sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn());
+  sl.registerLazySingleton<GoogleSignIn>(
+    () => GoogleSignIn(
+      serverClientId:
+          '405620285471-j6b6ar3747v01uopsf2hlsd4a6195i1i.apps.googleusercontent.com',
+    ),
+  );
   sl.registerLazySingleton<FacebookAuth>(() => FacebookAuth.instance);
 
   // Settings
@@ -161,6 +167,7 @@ Future<void> initInjection() async {
   sl.registerLazySingleton<SignOut>(() => SignOut(sl()));
   sl.registerLazySingleton<GetCurrentUser>(() => GetCurrentUser(sl()));
   sl.registerLazySingleton<UpdateProfile>(() => UpdateProfile(sl()));
+  sl.registerLazySingleton<UploadProfileImage>(() => UploadProfileImage(sl()));
   sl.registerLazySingleton<AuthCubit>(
     () => AuthCubit(
       signInWithGoogle: sl(),
@@ -168,6 +175,7 @@ Future<void> initInjection() async {
       signOut: sl(),
       getCurrentUser: sl(),
       updateProfile: sl(),
+      uploadProfileImage: sl(),
       authRepository: sl(),
     ),
   );
@@ -180,7 +188,7 @@ Future<void> initInjection() async {
   sl.registerLazySingleton<SaveWird>(() => SaveWird(sl()));
   sl.registerLazySingleton<UpdateWirdProgress>(() => UpdateWirdProgress(sl()));
   sl.registerLazySingleton<WatchTodayWird>(() => WatchTodayWird(sl()));
-  sl.registerFactory<WirdCubit>(
+  sl.registerLazySingleton<WirdCubit>(
     () => WirdCubit(
       getTodayWird: sl(),
       saveWird: sl(),

@@ -28,6 +28,7 @@ class WirdCubit extends Cubit<WirdState> {
 
   StreamSubscription<WirdEntity?>? _wirdSubscription;
   String? _currentUserId;
+  final Set<int> _pagesReadThisSession = {};
 
   Future<void> loadTodayWird(String userId) async {
     emit(const WirdLoading());
@@ -58,11 +59,25 @@ class WirdCubit extends Cubit<WirdState> {
     });
   }
 
+  /// Called from Quran reader when user navigates to a new page.
+  /// Increments quran progress for each unique page visited in the session.
+  Future<void> trackPageRead(int pageNumber) async {
+    if (state is! WirdLoaded || _currentUserId == null) return;
+    final isNew = _pagesReadThisSession.add(pageNumber);
+    if (!isNew) return;
+    final currentWird = (state as WirdLoaded).wird;
+    if (currentWird.quranTargetPages <= 0) return;
+    final newProgress = (currentWird.quranProgressPages + 1)
+        .clamp(0, currentWird.quranTargetPages);
+    await updateQuranProgress(newProgress);
+  }
+
   Future<void> createWird({
     required String userId,
     int quranTargetPages = 0,
     int tasbeehTarget = 0,
   }) async {
+    _pagesReadThisSession.clear();
     try {
       final wird = WirdEntity(
         date: DateTime.now(),
