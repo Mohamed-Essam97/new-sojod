@@ -7,7 +7,10 @@ class HomeState extends Equatable {
   final PrayerTimesEntity? prayerTimes;
   final DateTime? nextPrayer;
   final String? nextPrayerName;
-  final List<({String key, DateTime time})> upcomingPrayers;
+  /// Date of the next prayer (for Jumu'ah display when next is tomorrow)
+  final DateTime? nextPrayerDate;
+  /// Upcoming prayers for the next 7 days (each has key, time, and date)
+  final List<({String key, DateTime time, DateTime date})> upcomingPrayers;
   final String locationName;
   final HijriCalendar? hijriDate;
   final int lastReadPage;
@@ -16,6 +19,7 @@ class HomeState extends Equatable {
     this.prayerTimes,
     this.nextPrayer,
     this.nextPrayerName,
+    this.nextPrayerDate,
     this.upcomingPrayers = const [],
     this.locationName = '',
     this.hijriDate,
@@ -35,6 +39,7 @@ class HomeState extends Equatable {
         prayerTimes,
         nextPrayer,
         nextPrayerName,
+        nextPrayerDate,
         upcomingPrayers,
         locationName,
         hijriDate,

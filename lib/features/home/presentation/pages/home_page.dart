@@ -5,14 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../mood_adhkar/presentation/widgets/mood_selection_card.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../widgets/home_header.dart';
 import '../widgets/last_read_card.dart';
 import '../widgets/prayer_hero_card.dart';
-import '../widgets/prayer_pill.dart';
 import '../widgets/quick_card.dart';
+import '../widgets/upcoming_prayers_section.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -36,8 +35,10 @@ class _HomeView extends StatelessWidget {
     return 'goodEvening';
   }
 
-  static String _getPrayerDisplayName(String key, AppLocalizations l10n) {
-    if (key == 'dhuhr' && DateTime.now().weekday == DateTime.friday) {
+  static String _getPrayerDisplayName(
+      String key, DateTime? date, AppLocalizations l10n) {
+    final d = date ?? DateTime.now();
+    if (key == 'dhuhr' && d.weekday == DateTime.friday) {
       return l10n.translate('jumuah');
     }
     return l10n.translate(key);
@@ -70,65 +71,22 @@ class _HomeView extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                     child: PrayerHeroCard(
                       prayerName: _getPrayerDisplayName(
-                          state.nextPrayerName!, l10n),
+                          state.nextPrayerName!, state.nextPrayerDate, l10n),
                       time: state.nextPrayer!,
                       countdown: state.countdown,
                       l10n: l10n,
                     ),
                   ),
                 ),
-              if (state.upcomingPrayers.isNotEmpty) ...[
+              if (state.upcomingPrayers.isNotEmpty)
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          l10n.translate('upcomingPrayers'),
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => context.push('/prayer'),
-                          child: Text(
-                            l10n.translate('seeAll'),
-                            style: const TextStyle(
-                              color: AppColors.teal,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: UpcomingPrayersSection(
+                    upcomingPrayers: state.upcomingPrayers,
+                    nextPrayerName: state.nextPrayerName,
+                    l10n: l10n,
+                    isDark: isDark,
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 104,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: state.upcomingPrayers.length,
-                      itemBuilder: (context, i) {
-                        final p = state.upcomingPrayers[i];
-                        final isNext = p.key == state.nextPrayerName;
-                        return PrayerPill(
-                          name: _getPrayerDisplayName(p.key, l10n),
-                          time: p.time,
-                          isNext: isNext,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
               // const SliverToBoxAdapter(
               //   child: MoodSelectionCard(),
               // ),

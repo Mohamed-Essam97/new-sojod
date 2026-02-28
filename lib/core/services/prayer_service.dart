@@ -102,6 +102,35 @@ class PrayerService {
   Future<void> setCalculationMethod(String method) async =>
       _prefs.setString(AppConstants.keyPrayerMethod, method);
 
+  /// Upcoming prayers for the next 7 days (enabled prayers only).
+  List<({String key, DateTime time, DateTime date})> getUpcomingPrayersNext7Days(
+    double lat,
+    double lng,
+  ) {
+    final enabled = getEnabledPrayers();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <({String key, DateTime time, DateTime date})>[];
+
+    for (var d = 0; d < 7; d++) {
+      final date = today.add(Duration(days: d));
+      final pt = getPrayerTimesForDate(lat, lng, date);
+      final prayers = [
+        if (enabled.contains('fajr')) (key: 'fajr', time: pt.fajr),
+        if (enabled.contains('dhuhr')) (key: 'dhuhr', time: pt.dhuhr),
+        if (enabled.contains('asr')) (key: 'asr', time: pt.asr),
+        if (enabled.contains('maghrib')) (key: 'maghrib', time: pt.maghrib),
+        if (enabled.contains('isha')) (key: 'isha', time: pt.isha),
+      ];
+      for (final p in prayers) {
+        if (p.time.isAfter(now)) {
+          result.add((key: p.key, time: p.time, date: date));
+        }
+      }
+    }
+    return result;
+  }
+
   List<String> getEnabledPrayers() =>
       _prefs.getStringList(AppConstants.keyEnabledPrayers) ??
       ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

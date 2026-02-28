@@ -9,11 +9,14 @@ class PrayerPill extends StatelessWidget {
     required this.name,
     required this.time,
     required this.isNext,
+    this.dateLabel,
   });
 
   final String name;
   final DateTime time;
   final bool isNext;
+  /// Optional label for non-today (e.g. "Tomorrow", "Mon 3")
+  final String? dateLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +77,16 @@ class PrayerPill extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          if (dateLabel != null)
+            Text(
+              dateLabel!,
+              style: TextStyle(
+                color: timeColor,
+                fontSize: 10,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           Text(
             timeStr,
             style: TextStyle(

@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/profile_page.dart';
 import '../../features/hijri/presentation/pages/hijri_page.dart';
 import '../../features/mosque/presentation/pages/mosque_page.dart';
 import '../../features/permissions/presentation/pages/permissions_page.dart';
+import '../../features/prayer/presentation/pages/prayer_7days_page.dart';
 import '../../features/prayer/presentation/pages/prayer_page.dart';
 import '../../features/qibla/presentation/pages/qibla_page.dart';
 import '../../features/quran/presentation/pages/quran_page.dart';
@@ -43,6 +44,10 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/prayer',
         builder: (context, state) => const PrayerPage(),
+      ),
+      GoRoute(
+        path: '/prayer/7days',
+        builder: (context, state) => const Prayer7DaysPage(),
       ),
       GoRoute(
         path: '/quran',

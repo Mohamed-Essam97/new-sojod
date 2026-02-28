@@ -77,19 +77,23 @@ class HomeCubit extends Cubit<HomeState> {
 
     final prayerTimes = _prayerService.getPrayerTimes(lat, lng);
 
-    final enabled = _prayerService.getEnabledPrayers();
-    final nextPrayer = prayerTimes.getNextPrayer(enabled);
-    final nextPrayerName = prayerTimes.getNextPrayerName(enabled);
     final adjustment = await _hijriRepository.getAdjustment();
     final gregorian = DateTime.now().add(Duration(days: adjustment));
     final hijri = HijriCalendar.fromDate(gregorian);
     final lastPage = _quranRepository.getLastReadPage();
-    final upcoming = prayerTimes.getUpcomingPrayersToday();
+    final upcoming =
+        _prayerService.getUpcomingPrayersNext7Days(lat, lng);
+
+    // Next prayer = first in 7-day list (even if tomorrow)
+    final nextPrayer = upcoming.isNotEmpty ? upcoming.first.time : null;
+    final nextPrayerName = upcoming.isNotEmpty ? upcoming.first.key : null;
+    final nextPrayerDate = upcoming.isNotEmpty ? upcoming.first.date : null;
 
     emit(HomeState(
       prayerTimes: prayerTimes,
       nextPrayer: nextPrayer,
       nextPrayerName: nextPrayerName,
+      nextPrayerDate: nextPrayerDate,
       upcomingPrayers: upcoming,
       locationName: loc.name?.isNotEmpty == true ? loc.name! : 'Current location',
       hijriDate: hijri,
