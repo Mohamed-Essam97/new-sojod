@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/wird_logo.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
@@ -73,8 +74,7 @@ class HomeHeader extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.mosque_rounded,
-                                    color: Colors.white, size: 20),
+                                const WirdLogo(size: 20, color: Colors.white),
                                 const SizedBox(width: 6),
                                 Text(
                                   appName,

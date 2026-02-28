@@ -26,11 +26,11 @@ void main() async {
   await initInjection();
   await sl<NotificationService>().initialize();
   _appRouter = createAppRouter();
-  runApp(const AlMuminApp());
+  runApp(const WirdApp());
 }
 
-class AlMuminApp extends StatelessWidget {
-  const AlMuminApp({super.key});
+class WirdApp extends StatelessWidget {
+  const WirdApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class AlMuminApp extends StatelessWidget {
           if (s == null) return const SizedBox.shrink();
           final isRtl = s.locale.languageCode == 'ar';
           return MaterialApp.router(
-            title: "Al-Mu'min",
+            title: "Wird",
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

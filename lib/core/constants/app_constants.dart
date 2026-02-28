@@ -2,7 +2,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = "Al-Mu'min";
+  static const String appName = "Wird";
 
   // Layout padding
   static const double paddingScreenHorizontal = 24.0;

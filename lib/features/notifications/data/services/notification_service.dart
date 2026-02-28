@@ -12,7 +12,7 @@ import '../../domain/entities/prayer_notification_settings.dart';
 /// Morning Adhkar 200, Evening Adhkar 201, Sleep Adhkar 202
 class NotificationService {
   static const String _channelId = 'al_mumin_notifications';
-  static const String _channelName = 'Al-Mu\'min Reminders';
+  static const String _channelName = 'Wird Reminders';
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();

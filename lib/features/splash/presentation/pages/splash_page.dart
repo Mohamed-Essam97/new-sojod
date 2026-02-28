@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/services/prayer_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/wird_logo.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../settings/domain/repositories/settings_repository.dart';
@@ -102,10 +103,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.mosque,
-                        size: 48,
-                        color: AppColors.teal,
+                      child: const Center(
+                        child: WirdLogo(size: 56, color: AppColors.teal),
                       ),
                     ),
                     const SizedBox(height: 24),

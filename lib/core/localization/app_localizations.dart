@@ -14,7 +14,7 @@ class AppLocalizations {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
-      'appName': "Al-Mu'min",
+      'appName': "Wird",
       'home': 'Home',
       'prayer': 'Prayer Times',
       'quran': 'Quran',
@@ -170,7 +170,7 @@ class AppLocalizations {
       'moodBasedRecommendations': 'Mood-Based Recommendations',
     },
     'ar': {
-      'appName': 'المؤمن',
+      'appName': 'ورد',
       'home': 'الرئيسية',
       'prayer': 'أوقات الصلاة',
       'quran': 'القرآن',
