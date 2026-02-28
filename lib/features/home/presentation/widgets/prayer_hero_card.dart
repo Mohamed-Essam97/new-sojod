@@ -11,12 +11,15 @@ class PrayerHeroCard extends StatelessWidget {
     required this.time,
     required this.countdown,
     required this.l10n,
+    this.subtitle,
   });
 
   final String prayerName;
   final DateTime time;
   final Duration? countdown;
   final AppLocalizations l10n;
+  /// Badge text (e.g. "Next prayer · Today" or "Fajr · Tomorrow"); defaults to nextPrayer · today
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +62,7 @@ class PrayerHeroCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '${l10n.translate('nextPrayer')} · ${l10n.translate('today')}',
+                    subtitle ?? '${l10n.translate('nextPrayer')} · ${l10n.translate('today')}',
                     style: const TextStyle(
                       color: AppColors.onSurfaceMuted,
                       fontSize: 11,

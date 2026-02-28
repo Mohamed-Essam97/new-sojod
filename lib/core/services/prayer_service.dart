@@ -40,7 +40,11 @@ class PrayerService {
     );
   }
 
+  /// Device's local UTC offset for correct prayer times in user's timezone.
+  Duration get _localUtcOffset => DateTime.now().timeZoneOffset;
+
   // --- Prayer times (adhan API) ---
+  /// Returns prayer times for today in the device's local timezone.
   PrayerTimesEntity getPrayerTimes(double lat, double lng) {
     final coordinates = Coordinates(lat, lng);
     final methodKey = _prefs.getString(AppConstants.keyPrayerMethod) ?? 'karachi';
@@ -48,7 +52,14 @@ class PrayerService {
         .getParameters();
     params.madhab = Madhab.hanafi;
 
-    final prayerTimes = PrayerTimes.today(coordinates, params);
+    final now = DateTime.now();
+    final dateComponents = DateComponents.from(now);
+    final prayerTimes = PrayerTimes(
+      coordinates,
+      dateComponents,
+      params,
+      utcOffset: _localUtcOffset,
+    );
 
     return PrayerTimesEntity(
       fajr: prayerTimes.fajr,
@@ -60,7 +71,7 @@ class PrayerService {
     );
   }
 
-  /// For custom date (e.g. different timezone)
+  /// Returns prayer times for a specific date in the device's local timezone.
   PrayerTimesEntity getPrayerTimesForDate(
     double lat,
     double lng,
@@ -74,9 +85,13 @@ class PrayerService {
         .getParameters();
     params.madhab = Madhab.hanafi;
 
-    final prayerTimes = utcOffset != null
-        ? PrayerTimes(coordinates, dateComponents, params, utcOffset: utcOffset)
-        : PrayerTimes(coordinates, dateComponents, params);
+    final offset = utcOffset ?? _localUtcOffset;
+    final prayerTimes = PrayerTimes(
+      coordinates,
+      dateComponents,
+      params,
+      utcOffset: offset,
+    );
 
     return PrayerTimesEntity(
       fajr: prayerTimes.fajr,

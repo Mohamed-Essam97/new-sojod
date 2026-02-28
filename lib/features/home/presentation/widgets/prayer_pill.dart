@@ -9,12 +9,15 @@ class PrayerPill extends StatelessWidget {
     required this.name,
     required this.time,
     required this.isNext,
+    this.isSelected = false,
     this.dateLabel,
   });
 
   final String name;
   final DateTime time;
   final bool isNext;
+  /// True when this prayer is shown in the hero card (user selected or next)
+  final bool isSelected;
   /// Optional label for non-today (e.g. "Tomorrow", "Mon 3")
   final String? dateLabel;
 
@@ -22,11 +25,11 @@ class PrayerPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final timeStr = DateFormat.jm().format(time);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isNext
+    final cardBg = (isNext || isSelected)
         ? AppColors.teal
         : (isDark ? AppColors.darkCard : Colors.white);
-    final nameColor = isNext ? Colors.white : AppColors.teal;
-    final timeColor = isNext
+    final nameColor = (isNext || isSelected) ? Colors.white : AppColors.teal;
+    final timeColor = (isNext || isSelected)
         ? AppColors.onSurfaceMuted
         : (isDark ? AppColors.textSecondaryDark : AppColors.grey);
 
@@ -39,7 +42,7 @@ class PrayerPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: isNext
+            color: (isNext || isSelected)
                 ? AppColors.teal.withValues(alpha: 0.25)
                 : Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 10,
@@ -55,7 +58,7 @@ class PrayerPill extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: isNext
+              color: (isNext || isSelected)
                   ? AppColors.overlayLight
                   : AppColors.teal.withValues(alpha: 0.1),
               shape: BoxShape.circle,
@@ -63,7 +66,7 @@ class PrayerPill extends StatelessWidget {
             child: Icon(
               Icons.wb_sunny_rounded,
               size: 14,
-              color: isNext ? Colors.white : AppColors.teal,
+              color: (isNext || isSelected) ? Colors.white : AppColors.teal,
             ),
           ),
           const SizedBox(height: 8),

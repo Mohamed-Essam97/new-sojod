@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -44,6 +45,38 @@ class _HomeView extends StatelessWidget {
     return l10n.translate(key);
   }
 
+  static String _heroSubtitle(
+    PrayerSelection? displayed,
+    String? nextPrayerName,
+    DateTime? nextPrayerDate,
+    AppLocalizations l10n,
+  ) {
+    if (displayed == null) return '';
+    final isNext = nextPrayerName != null &&
+        displayed.key == nextPrayerName &&
+        nextPrayerDate != null &&
+        displayed.date.year == nextPrayerDate.year &&
+        displayed.date.month == nextPrayerDate.month &&
+        displayed.date.day == nextPrayerDate.day;
+    final today = DateTime.now();
+    final dateOnly = DateTime(today.year, today.month, today.day);
+    final d = DateTime(displayed.date.year, displayed.date.month, displayed.date.day);
+    final diff = d.difference(dateOnly).inDays;
+    final dateLabel = diff == 0
+        ? l10n.translate('today')
+        : diff == 1
+            ? l10n.translate('tomorrow')
+            : DateFormat.E(l10n.locale.languageCode).format(displayed.date);
+    if (isNext) {
+      return '${l10n.translate('nextPrayer')} · $dateLabel';
+    }
+    final prayerName = _getPrayerDisplayName(displayed.key, displayed.date, l10n);
+    final capped = prayerName.length > 1
+        ? '${prayerName[0].toUpperCase()}${prayerName.substring(1)}'
+        : prayerName;
+    return '$capped · $dateLabel';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -65,16 +98,24 @@ class _HomeView extends StatelessWidget {
                   hijriYear: state.hijriDate?.hYear,
                 ),
               ),
-              if (state.nextPrayer != null && state.nextPrayerName != null)
+              if (state.displayedPrayer != null)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                     child: PrayerHeroCard(
                       prayerName: _getPrayerDisplayName(
-                          state.nextPrayerName!, state.nextPrayerDate, l10n),
-                      time: state.nextPrayer!,
+                          state.displayedPrayer!.key,
+                          state.displayedPrayer!.date,
+                          l10n),
+                      time: state.displayedPrayer!.time,
                       countdown: state.countdown,
                       l10n: l10n,
+                      subtitle: _heroSubtitle(
+                        state.displayedPrayer,
+                        state.nextPrayerName,
+                        state.nextPrayerDate,
+                        l10n,
+                      ),
                     ),
                   ),
                 ),
@@ -83,6 +124,9 @@ class _HomeView extends StatelessWidget {
                   child: UpcomingPrayersSection(
                     upcomingPrayers: state.upcomingPrayers,
                     nextPrayerName: state.nextPrayerName,
+                    selectedPrayer: state.selectedPrayer,
+                    onPrayerSelected: (p) =>
+                        context.read<HomeCubit>().selectPrayer(p),
                     l10n: l10n,
                     isDark: isDark,
                   ),

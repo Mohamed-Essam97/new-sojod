@@ -95,10 +95,19 @@ class HomeCubit extends Cubit<HomeState> {
       nextPrayerName: nextPrayerName,
       nextPrayerDate: nextPrayerDate,
       upcomingPrayers: upcoming,
+      selectedPrayer: state.selectedPrayer,
       locationName: loc.name?.isNotEmpty == true ? loc.name! : 'Current location',
       hijriDate: hijri,
       lastReadPage: lastPage,
     ));
+  }
+
+  void selectPrayer(PrayerSelection prayer) {
+    emit(state.copyWith(selectedPrayer: prayer));
+  }
+
+  void clearPrayerSelection() {
+    emit(state.copyWith(selectedPrayer: null));
   }
 
   @override

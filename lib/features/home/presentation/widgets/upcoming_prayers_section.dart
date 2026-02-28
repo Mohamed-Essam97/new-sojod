@@ -4,21 +4,27 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../cubit/home_state.dart';
 import 'prayer_pill.dart';
 
 /// Displays upcoming prayers for the next 7 days in a horizontal list.
 /// "See all" navigates to the full 7-day prayer list.
+/// Tapping a pill selects it and shows it in the hero card.
 class UpcomingPrayersSection extends StatelessWidget {
   const UpcomingPrayersSection({
     super.key,
     required this.upcomingPrayers,
     required this.nextPrayerName,
+    required this.selectedPrayer,
+    required this.onPrayerSelected,
     required this.l10n,
     required this.isDark,
   });
 
-  final List<({String key, DateTime time, DateTime date})> upcomingPrayers;
+  final List<PrayerSelection> upcomingPrayers;
   final String? nextPrayerName;
+  final PrayerSelection? selectedPrayer;
+  final void Function(PrayerSelection prayer) onPrayerSelected;
   final AppLocalizations l10n;
   final bool isDark;
 
@@ -96,12 +102,22 @@ class UpcomingPrayersSection extends StatelessWidget {
             itemBuilder: (context, i) {
               final p = listPrayers[i];
               final isNext = p.key == nextPrayerName;
+              final displayed = selectedPrayer ?? (upcomingPrayers.isNotEmpty ? upcomingPrayers.first : null);
+              final isSelected = displayed != null &&
+                  p.key == displayed.key &&
+                  p.date.year == displayed.date.year &&
+                  p.date.month == displayed.date.month &&
+                  p.date.day == displayed.date.day;
               final dateLabel = _dateLabel(p.date, l10n);
-              return PrayerPill(
-                name: _getPrayerDisplayName(p.key, p.date, l10n),
-                time: p.time,
-                isNext: isNext,
-                dateLabel: dateLabel.isNotEmpty ? dateLabel : null,
+              return GestureDetector(
+                onTap: () => onPrayerSelected(p),
+                child: PrayerPill(
+                  name: _getPrayerDisplayName(p.key, p.date, l10n),
+                  time: p.time,
+                  isNext: isNext,
+                  isSelected: isSelected,
+                  dateLabel: dateLabel.isNotEmpty ? dateLabel : null,
+                ),
               );
             },
           ),
