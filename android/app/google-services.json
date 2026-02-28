@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "405620285471",
+    "project_id": "wird-islamic-app",
+    "storage_bucket": "wird-islamic-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:405620285471:android:ab37420b030207df03b52a",
+        "android_client_info": {
+          "package_name": "com.wird.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRIgQwn0F-KgcFNhUWNcyrpLslazUJITw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

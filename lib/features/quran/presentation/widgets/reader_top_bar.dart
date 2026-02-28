@@ -86,7 +86,7 @@ class ReaderTopBar extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.tune_rounded,
+                    icon: Icon(Icons.settings_outlined,
                         color: textColor, size: 22),
                     onPressed: onSettings,
                   ),

@@ -1,4 +1,4 @@
-package com.almumin.al_mumin
+package com.wird.app
 
 import io.flutter.embedding.android.FlutterActivity
 

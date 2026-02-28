@@ -69,6 +69,7 @@ class _AdhkarView extends StatelessWidget {
                   ),
                 ),
               ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           );
         },

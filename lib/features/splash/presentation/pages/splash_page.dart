@@ -1,10 +1,14 @@
 import 'dart:async';
-import 'package:al_mumin/core/services/prayer_service.dart';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/services/prayer_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../settings/domain/repositories/settings_repository.dart';
 
 class SplashPage extends StatefulWidget {
@@ -38,6 +42,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   }
 
   Future<void> _checkLocation() async {
+    await Future.delayed(const Duration(milliseconds: 2000));
+    if (!mounted) return;
+
     final location = await sl<PrayerService>().getLocation();
     if (location.lat == null || location.lng == null) {
       context.go('/permissions');
@@ -103,7 +110,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      "Al-Mu'min",
+                      "Wird",
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: AppColors.teal,
                             fontWeight: FontWeight.bold,
@@ -112,7 +119,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'المؤمن',
+                      'ورد',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: Colors.grey,
                             letterSpacing: 2,

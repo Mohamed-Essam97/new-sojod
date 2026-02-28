@@ -184,7 +184,20 @@ class _HomeView extends StatelessWidget {
 
   List<Widget> _quickItems(
       BuildContext context, AppLocalizations l10n) {
+    final isAr = l10n.locale.languageCode == 'ar';
     final items = [
+      (
+        icon: Icons.task_alt_rounded,
+        label: isAr ? 'وِردي' : 'My Wird',
+        route: '/wird',
+        color: AppColors.teal,
+      ),
+      (
+        icon: Icons.groups_rounded,
+        label: isAr ? 'المجموعات' : 'Groups',
+        route: '/groups',
+        color: AppColors.violet,
+      ),
       (
         icon: Icons.menu_book_rounded,
         label: l10n.translate('readQuran'),
@@ -207,19 +220,7 @@ class _HomeView extends StatelessWidget {
         icon: Icons.mosque_rounded,
         label: l10n.translate('mosqueFinder'),
         route: '/mosque',
-        color: AppColors.violet,
-      ),
-      (
-        icon: Icons.repeat_rounded,
-        label: l10n.translate('tasbeehCounter'),
-        route: '/tasbeeh',
         color: AppColors.amber,
-      ),
-      (
-        icon: Icons.flag_rounded,
-        label: l10n.translate('quranCompletionPlan'),
-        route: '/quran',
-        color: AppColors.teal,
       ),
     ];
 

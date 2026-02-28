@@ -6,6 +6,8 @@ import 'package:quran_with_tafsir/quran_with_tafsir.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../notifications/presentation/cubit/notification_cubit.dart';
 import '../../../notifications/presentation/cubit/notification_state.dart';
 import '../cubit/settings_cubit.dart';
@@ -13,7 +15,6 @@ import '../cubit/settings_state.dart';
 import '../widgets/adhkar_notification_tile.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/prayer_notification_sheet.dart';
-import '../widgets/reciter_picker_sheet.dart';
 import '../widgets/section_label.dart';
 import '../widgets/settings_card.dart';
 import '../widgets/settings_header.dart';
@@ -83,10 +84,36 @@ class _SettingsView extends StatelessWidget {
                         title: l10n.translate('reciter'),
                         subtitle: reciterName,
                         isDark: isDark,
-                        onTap: () => _showReciterPicker(
-                            context, state.selectedReciter, isAr),
+                        onTap: () async {
+                          await context.push('/reciters');
+                          if (context.mounted) {
+                            context.read<SettingsCubit>().loadSettings();
+                          }
+                        },
                       ),
                     ]),
+                    const SizedBox(height: 20),
+
+                    SectionLabel(isAr ? 'الحساب' : 'Account'),
+                    BlocBuilder<AuthCubit, AuthState>(
+                      builder: (context, authState) {
+                        final isAuthenticated = authState is AuthAuthenticated;
+                        return SettingsCard(isDark: isDark, children: [
+                          SettingsTile(
+                            icon: isAuthenticated ? Icons.person_rounded : Icons.login_rounded,
+                            iconColor: AppColors.teal,
+                            title: isAuthenticated 
+                                ? (isAr ? 'الملف الشخصي' : 'Profile')
+                                : (isAr ? 'تسجيل الدخول' : 'Sign In'),
+                            subtitle: isAuthenticated
+                                ? (isAr ? 'عرض وتعديل ملفك الشخصي' : 'View and edit your profile')
+                                : (isAr ? 'سجل دخول لتتبع وِردك ومشاركته' : 'Sign in to track and share your wird'),
+                            isDark: isDark,
+                            onTap: () => context.push(isAuthenticated ? '/profile' : '/login'),
+                          ),
+                        ]);
+                      },
+                    ),
                     const SizedBox(height: 20),
 
                     SectionLabel(l10n.translate('general')),
@@ -113,7 +140,7 @@ class _SettingsView extends StatelessWidget {
                             ? AppColors.emerald
                             : AppColors.amber,
                         isDark: isDark,
-                        onTap: () => context.pushNamed('/permissions'),
+                        onTap: () => context.push('/permissions'),
                       ),
                     ]),
                     const SizedBox(height: 20),
@@ -252,24 +279,4 @@ class _SettingsView extends StatelessWidget {
     );
   }
 
-  void _showReciterPicker(
-      BuildContext context, String current, bool isAr) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.darkCard : Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => BlocProvider.value(
-        value: context.read<SettingsCubit>(),
-        child: ReciterPickerSheet(
-          current: current,
-          isAr: isAr,
-          isDark: isDark,
-        ),
-      ),
-    );
-  }
 }

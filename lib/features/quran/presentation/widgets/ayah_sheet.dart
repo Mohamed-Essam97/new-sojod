@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:quran_with_tafsir/quran_with_tafsir.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../cubit/quran_cubit.dart';
 
@@ -66,10 +67,25 @@ class AyahSheet extends StatelessWidget {
                     icon: Icons.volume_up_outlined,
                     label: 'Play',
                     onTap: () async {
-                      final url =
-                          cubit.getAudioUrl(ayah.surahNumber, ayah.id);
-                      await audioPlayer.setUrl(url);
-                      audioPlayer.play();
+                      try {
+                        final url =
+                            cubit.getAudioUrl(ayah.surahNumber, ayah.id);
+                        await audioPlayer.setUrl(url);
+                        await audioPlayer.play();
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)
+                                    .translate('audioPlayError'),
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: AppColors.red,
+                            ),
+                          );
+                        }
+                      }
                     },
                   ),
                   const SizedBox(width: 8),

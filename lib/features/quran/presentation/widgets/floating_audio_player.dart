@@ -3,6 +3,7 @@ import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../reciters/domain/entities/reciter.dart';
 import 'wave_bars.dart';
 
 class FloatingAudioPlayer extends StatelessWidget {
@@ -13,9 +14,12 @@ class FloatingAudioPlayer extends StatelessWidget {
     required this.totalAyahs,
     required this.playingIndexNotifier,
     required this.audioPlayer,
+    required this.reciter,
     required this.l10n,
+    required this.isRtl,
     required this.onPlay,
     required this.onStop,
+    required this.onChangeReciter,
   });
 
   final bool isPlaying;
@@ -23,9 +27,12 @@ class FloatingAudioPlayer extends StatelessWidget {
   final int totalAyahs;
   final ValueNotifier<int> playingIndexNotifier;
   final AudioPlayer audioPlayer;
+  final Reciter reciter;
   final AppLocalizations l10n;
+  final bool isRtl;
   final VoidCallback onPlay;
   final VoidCallback onStop;
+  final VoidCallback onChangeReciter;
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +54,11 @@ class FloatingAudioPlayer extends StatelessWidget {
               totalAyahs: totalAyahs,
               playingIndexNotifier: playingIndexNotifier,
               audioPlayer: audioPlayer,
+              reciter: reciter,
               l10n: l10n,
+              isRtl: isRtl,
               onStop: onStop,
+              onChangeReciter: onChangeReciter,
             )
           : ReaderPlayButton(
               key: const ValueKey('idle'),
@@ -120,16 +130,22 @@ class ReaderMiniPlayer extends StatelessWidget {
     required this.totalAyahs,
     required this.playingIndexNotifier,
     required this.audioPlayer,
+    required this.reciter,
     required this.l10n,
+    required this.isRtl,
     required this.onStop,
+    required this.onChangeReciter,
   });
 
   final String surahName;
   final int totalAyahs;
   final ValueNotifier<int> playingIndexNotifier;
   final AudioPlayer audioPlayer;
+  final Reciter reciter;
   final AppLocalizations l10n;
+  final bool isRtl;
   final VoidCallback onStop;
+  final VoidCallback onChangeReciter;
 
   @override
   Widget build(BuildContext context) {
@@ -202,6 +218,46 @@ class ReaderMiniPlayer extends StatelessWidget {
             },
           ),
           const SizedBox(height: 10),
+          GestureDetector(
+            onTap: onChangeReciter,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: ClipOval(
+                    child: reciter.imageUrl != null
+                        ? Image.asset(
+                            reciter.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _placeholderAvatar(),
+                          )
+                        : _placeholderAvatar(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isRtl ? reciter.nameAr : reciter.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.onSurfaceMuted,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
           ValueListenableBuilder<int>(
             valueListenable: playingIndexNotifier,
             builder: (context, index, _) => ClipRRect(
@@ -272,6 +328,17 @@ class ReaderMiniPlayer extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _placeholderAvatar() {
+    return Container(
+      color: AppColors.overlayLight,
+      child: Icon(
+        Icons.person_rounded,
+        color: AppColors.onSurfaceMuted,
+        size: 18,
       ),
     );
   }

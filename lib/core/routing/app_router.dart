@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/adhkar/presentation/pages/adhkar_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/profile_page.dart';
+import '../../features/hijri/presentation/pages/hijri_page.dart';
+import '../../features/mosque/presentation/pages/mosque_page.dart';
+import '../../features/permissions/presentation/pages/permissions_page.dart';
 import '../../features/prayer/presentation/pages/prayer_page.dart';
+import '../../features/qibla/presentation/pages/qibla_page.dart';
 import '../../features/quran/presentation/pages/quran_page.dart';
 import '../../features/quran/presentation/pages/quran_reader_page.dart';
-import '../../features/adhkar/presentation/pages/adhkar_page.dart';
-import '../../features/hijri/presentation/pages/hijri_page.dart';
-import '../../features/qibla/presentation/pages/qibla_page.dart';
-import '../../features/mosque/presentation/pages/mosque_page.dart';
-import '../../features/tasbeeh/presentation/pages/tasbeeh_page.dart';
+import '../../features/reciters/presentation/pages/reciter_selection_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
-import '../../features/permissions/presentation/pages/permissions_page.dart';
 import '../../features/shell/presentation/pages/home_shell_screen.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
+import '../../features/tasbeeh/presentation/pages/tasbeeh_page.dart';
+import '../../features/wird/presentation/pages/wird_dashboard_page.dart';
+import '../../features/groups/presentation/pages/groups_list_page.dart';
+import '../../features/groups/presentation/pages/group_details_page.dart';
+import '../../features/groups/presentation/pages/join_group_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -75,6 +82,37 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: '/reciters',
+        builder: (context, state) => const ReciterSelectionPage(),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: '/wird',
+        builder: (context, state) => const WirdDashboardPage(),
+      ),
+      GoRoute(
+        path: '/groups',
+        builder: (context, state) => const GroupsListPage(),
+      ),
+      GoRoute(
+        path: '/groups/join',
+        builder: (context, state) => const JoinGroupPage(),
+      ),
+      GoRoute(
+        path: '/groups/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return GroupDetailsPage(groupId: id);
+        },
       ),
     ],
   );

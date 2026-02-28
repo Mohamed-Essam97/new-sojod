@@ -4,7 +4,7 @@ import 'package:quran_with_tafsir/quran_with_tafsir.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../cubit/quran_cubit.dart';
-import 'ayah_sheet.dart';
+import 'ayah_context_menu.dart';
 
 class AyahTile extends StatelessWidget {
   const AyahTile({
@@ -38,9 +38,15 @@ class AyahTile extends StatelessWidget {
             final isPlaying = playingId == ayah.id;
 
             return GestureDetector(
-              onTap: () {
+              onLongPressStart: (details) {
                 selectedAyahNotifier.value = ayah.id;
-                _showAyahSheet(context).then((_) {
+                AyahContextMenu.show(
+                  context: context,
+                  position: details.globalPosition,
+                  ayah: ayah,
+                  audioPlayer: audioPlayer,
+                  cubit: cubit,
+                ).then((_) {
                   if (selectedAyahNotifier.value == ayah.id) {
                     selectedAyahNotifier.value = null;
                   }
@@ -84,21 +90,6 @@ class AyahTile extends StatelessWidget {
           },
         );
       },
-    );
-  }
-
-  Future<void> _showAyahSheet(BuildContext context) {
-    final tafsir = cubit.getTafsir(ayah.surahNumber)[ayah.id];
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AyahSheet(
-        ayah: ayah,
-        tafsir: tafsir,
-        audioPlayer: audioPlayer,
-        cubit: cubit,
-      ),
     );
   }
 }

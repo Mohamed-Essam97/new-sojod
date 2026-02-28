@@ -8,6 +8,9 @@ import 'package:just_audio/just_audio.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/quran_reading_theme.dart';
+import '../../../reciters/domain/entities/reciter.dart';
+import '../../../reciters/domain/repositories/reciter_repository.dart';
+import '../../../reciters/presentation/widgets/reciter_selection_sheet.dart';
 import '../cubit/quran_cubit.dart';
 import '../cubit/quran_state.dart';
 import '../widgets/floating_audio_player.dart';
@@ -45,6 +48,7 @@ class _QuranReaderPageState extends State<QuranReaderPage> {
       create: (_) => sl<QuranCubit>(),
       child: _QuranReaderView(
         initialPage: widget.initialPage,
+        initialSurah: widget.initialSurah,
         audioPlayer: _audioPlayer,
       ),
     );
@@ -56,10 +60,12 @@ class _QuranReaderPageState extends State<QuranReaderPage> {
 // ─────────────────────────────────────────────────
 class _QuranReaderView extends StatefulWidget {
   final int initialPage;
+  final int? initialSurah;
   final AudioPlayer audioPlayer;
 
   const _QuranReaderView({
     required this.initialPage,
+    this.initialSurah,
     required this.audioPlayer,
   });
 
@@ -82,7 +88,11 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
   // Track playing surah metadata for the floating player display
   String _playingSurahName = '';
   int _playingTotalAyahs = 0;
+  int _playingSurahNumber = 0;
   final _playingIndexNotifier = ValueNotifier<int>(0);
+
+  // Current reciter (from ReciterRepository, updated when user changes)
+  late Reciter _currentReciter;
 
   /// Notifier for the currently tapped (selected) ayah — used for highlight.
   final _selectedAyahNotifier = ValueNotifier<int?>(null);
@@ -98,9 +108,16 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
     super.initState();
     _currentPage = widget.initialPage;
     _pageController = PageController(initialPage: widget.initialPage - 1);
+    _currentReciter = sl<ReciterRepository>().getSelectedReciter();
     // Load surah info after the first frame so context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _loadSurahInfo(context, _currentPage);
+      if (mounted) {
+        _loadSurahInfo(context, _currentPage);
+        // Auto-play if initialSurah is provided
+        if (widget.initialSurah != null) {
+          _autoPlaySurah(context, widget.initialSurah!);
+        }
+      }
     });
   }
 
@@ -120,6 +137,54 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
       _currentSurahNameEn = meta.nameEn;
       _currentJuz = juz;
     });
+  }
+
+  Future<void> _autoPlaySurah(BuildContext context, int surahNumber) async {
+    final cubit = context.read<QuranCubit>();
+    final surah = cubit.getSurah(surahNumber);
+    if (surah.verses.isEmpty) return;
+
+    final surahs = cubit.getSurahs();
+    final meta = surahs.firstWhere(
+      (s) => s.number == surahNumber,
+      orElse: () => surahs.first,
+    );
+
+    final playlist = ConcatenatingAudioSource(
+      children: surah.verses
+          .map((v) => AudioSource.uri(
+                Uri.parse(cubit.getAudioUrl(surahNumber, v.id)),
+              ))
+          .toList(),
+    );
+
+    await widget.audioPlayer.setAudioSource(playlist);
+
+    _indexSub?.cancel();
+    _indexSub = widget.audioPlayer.currentIndexStream.listen((index) {
+      if (index != null && index < surah.verses.length) {
+        _playingAyahNotifier.value = surah.verses[index].id;
+        _playingIndexNotifier.value = index;
+      }
+    });
+
+    _playerStateSub?.cancel();
+    _playerStateSub = widget.audioPlayer.playerStateStream.listen((ps) {
+      if (ps.processingState == ProcessingState.completed) {
+        _indexSub?.cancel();
+        _playingAyahNotifier.value = null;
+        _playingIndexNotifier.value = 0;
+        if (mounted) setState(() => _isPlayingSurah = false);
+      }
+    });
+
+    setState(() {
+      _isPlayingSurah = true;
+      _playingSurahName = meta.nameAr;
+      _playingTotalAyahs = surah.verses.length;
+      _playingSurahNumber = surahNumber;
+    });
+    widget.audioPlayer.play();
   }
 
   @override
@@ -198,7 +263,63 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
       _isPlayingSurah = true;
       _playingSurahName = meta.nameAr;
       _playingTotalAyahs = surah.verses.length;
+      _playingSurahNumber = surahNumber;
     });
+    widget.audioPlayer.play();
+  }
+
+  Future<void> _onChangeReciter(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    await ReciterSelectionSheet.show(
+      context,
+      currentReciter: _currentReciter,
+      isDark: isDark,
+      onReciterSelected: (reciter) => _applyReciterChange(context, reciter),
+    );
+  }
+
+  Future<void> _applyReciterChange(BuildContext context, Reciter reciter) async {
+    setState(() => _currentReciter = reciter);
+    context.read<QuranCubit>().setSelectedReciter(reciter.id);
+
+    if (!_isPlayingSurah) return;
+
+    await widget.audioPlayer.stop();
+    _indexSub?.cancel();
+    _playerStateSub?.cancel();
+
+    final cubit = context.read<QuranCubit>();
+    final surah = cubit.getSurah(_playingSurahNumber);
+    if (surah.verses.isEmpty) return;
+
+    final currentIndex = _playingIndexNotifier.value;
+    final playlist = ConcatenatingAudioSource(
+      children: surah.verses
+          .map((v) => AudioSource.uri(
+                Uri.parse(cubit.getAudioUrl(_playingSurahNumber, v.id)),
+              ))
+          .toList(),
+    );
+
+    await widget.audioPlayer.setAudioSource(playlist);
+    await widget.audioPlayer.seek(Duration.zero, index: currentIndex);
+
+    _indexSub = widget.audioPlayer.currentIndexStream.listen((index) {
+      if (index != null && index < surah.verses.length) {
+        _playingAyahNotifier.value = surah.verses[index].id;
+        _playingIndexNotifier.value = index;
+      }
+    });
+
+    _playerStateSub = widget.audioPlayer.playerStateStream.listen((ps) {
+      if (ps.processingState == ProcessingState.completed) {
+        _indexSub?.cancel();
+        _playingAyahNotifier.value = null;
+        _playingIndexNotifier.value = 0;
+        if (mounted) setState(() => _isPlayingSurah = false);
+      }
+    });
+
     widget.audioPlayer.play();
   }
 
@@ -285,9 +406,12 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
                       totalAyahs: _playingTotalAyahs,
                       playingIndexNotifier: _playingIndexNotifier,
                       audioPlayer: widget.audioPlayer,
+                      reciter: _currentReciter,
                       l10n: AppLocalizations.of(context),
+                      isRtl: Directionality.of(context) == TextDirection.rtl,
                       onPlay: () => _togglePlaySurah(context),
                       onStop: _stopPlayback,
+                      onChangeReciter: () => _onChangeReciter(context),
                     ),
                   ),
 

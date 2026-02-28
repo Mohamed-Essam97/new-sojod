@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isMemberOfGroup(groupId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+    }
+    
+    function isGroupOwner(groupId) {
+      return isSignedIn() && get(/databases/$(database)/documents/groups/$(groupId)).data.ownerId == request.auth.uid;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId);
+    }
+    
+    // Wird (Daily Wird) collection
+    match /wirds/{userId}/daily/{date} {
+      // User can read/write their own wird
+      allow read, write: if isOwner(userId);
+      
+      // Group members can read wird of other members
+      allow read: if isSignedIn() && 
+        exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)) &&
+        exists(/databases/$(database)/documents/groups/$(groupId)/members/$(userId));
+    }
+    
+    // Groups collection
+    match /groups/{groupId} {
+      // Anyone can read if they're a member
+      allow read: if isMemberOfGroup(groupId);
+      
+      // Any authenticated user can create a group
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      
+      // Only owner can update or delete
+      allow update, delete: if isGroupOwner(groupId);
+      
+      // Members subcollection
+      match /members/{memberId} {
+        // Members can read other members
+        allow read: if isMemberOfGroup(groupId);
+        
+        // Owner can write (add/remove/update members)
+        allow write: if isGroupOwner(groupId);
+        
+        // User can join group if they have valid invite (handled in app logic)
+        allow create: if isSignedIn() && memberId == request.auth.uid;
+        
+        // User can leave group
+        allow delete: if isOwner(memberId);
+      }
+      
+      // Invites subcollection
+      match /invites/{inviteCode} {
+        // Anyone can read invites (needed to validate codes)
+        allow read: if true;
+        
+        // Members can create invites
+        allow create: if isMemberOfGroup(groupId);
+        
+        // System can update invite uses count
+        allow update: if true;
+        
+        // Owner can delete invites
+        allow delete: if isGroupOwner(groupId);
+      }
+    }
+  }
+}

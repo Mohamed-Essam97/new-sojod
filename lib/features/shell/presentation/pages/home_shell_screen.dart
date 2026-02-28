@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../audio_player/presentation/widgets/persistent_audio_player.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../../../quran/presentation/pages/quran_page.dart';
 import '../../../adhkar/presentation/pages/adhkar_page.dart';
@@ -32,13 +33,18 @@ class _HomeShellView extends StatelessWidget {
 
         return Scaffold(
           extendBody: true,
-          body: IndexedStack(
-            index: idx,
-            children: const [
-              HomePage(),
-              QuranPage(),
-              AdhkarPage(),
-              SettingsPage(),
+          body: Stack(
+            children: [
+              IndexedStack(
+                index: idx,
+                children: const [
+                  HomePage(),
+                  QuranPage(),
+                  AdhkarPage(),
+                  SettingsPage(),
+                ],
+              ),
+              const PersistentAudioPlayer(),
             ],
           ),
           bottomNavigationBar: CustomBottomNavBar(

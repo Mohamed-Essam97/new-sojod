@@ -105,7 +105,7 @@ class _QuranViewState extends State<_QuranView>
                         final page = surah.verses.isNotEmpty
                             ? surah.verses.first.page
                             : 1;
-                        context.push('/quran/reader?page=$page');
+                        context.push('/quran/reader?page=$page&surah=$number');
                       },
                     ),
                     JuzGrid(
