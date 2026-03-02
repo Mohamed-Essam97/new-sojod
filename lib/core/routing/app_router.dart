@@ -10,6 +10,7 @@ import '../../features/permissions/presentation/pages/permissions_page.dart';
 import '../../features/prayer/presentation/pages/prayer_7days_page.dart';
 import '../../features/prayer/presentation/pages/prayer_page.dart';
 import '../../features/qibla/presentation/pages/qibla_page.dart';
+import '../../features/audio_player/presentation/pages/quran_audio_player_screen.dart';
 import '../../features/quran/presentation/pages/quran_page.dart';
 import '../../features/quran/presentation/pages/quran_reader_page.dart';
 import '../../features/reciters/presentation/pages/reciter_selection_page.dart';
@@ -52,6 +53,10 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/quran',
         builder: (context, state) => const QuranPage(),
+      ),
+      GoRoute(
+        path: '/quran-audio',
+        builder: (context, state) => const QuranAudioPlayerScreen(),
       ),
       GoRoute(
         path: '/quran/reader',

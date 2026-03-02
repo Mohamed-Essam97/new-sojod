@@ -207,23 +207,23 @@ class _HomeView extends StatelessWidget {
         color: AppColors.emerald,
       ),
       (
+        icon: Icons.headphones_rounded,
+        label: isAr ? 'استماع القرآن' : 'Quran Audio',
+        route: '/quran-audio',
+        color: AppColors.teal,
+      ),
+      (
         icon: Icons.explore_rounded,
         label: l10n.translate('qiblaCompass'),
         route: '/qibla',
         color: AppColors.sky,
       ),
-      (
-        icon: Icons.favorite_rounded,
-        label: l10n.translate('duaAdhkar'),
-        route: '/adhkar',
-        color: AppColors.rose,
-      ),
-      (
-        icon: Icons.mosque_rounded,
-        label: l10n.translate('mosqueFinder'),
-        route: '/mosque',
-        color: AppColors.amber,
-      ),
+      // (
+      //   icon: Icons.mosque_rounded,
+      //   label: l10n.translate('mosqueFinder'),
+      //   route: '/mosque',
+      //   color: AppColors.amber,
+      // ),
     ];
 
     return items

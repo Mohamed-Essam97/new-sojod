@@ -73,6 +73,11 @@ class QuranAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   @override
   Future<void> skipToQueueItem(int index) => _player.seek(Duration.zero, index: index);
 
+  Stream<Duration> get positionStream => _player.positionStream;
+  Stream<Duration?> get durationStream => _player.durationStream;
+
+  Future<void> setSpeed(double speed) => _player.setSpeed(speed);
+
   Future<void> setAudioSourceFromUrls(List<String> urls, List<MediaItem> items) async {
     queue.add(items);
     final audioSource = ConcatenatingAudioSource(

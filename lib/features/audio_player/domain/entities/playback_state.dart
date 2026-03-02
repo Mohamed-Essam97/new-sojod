@@ -11,6 +11,9 @@ class AudioPlaybackState extends Equatable {
     this.totalAyahs = 0,
     this.currentIndex = 0,
     this.reciterName,
+    this.position = Duration.zero,
+    this.duration,
+    this.speed = 1.0,
   });
 
   final PlaybackMode mode;
@@ -20,9 +23,21 @@ class AudioPlaybackState extends Equatable {
   final int totalAyahs;
   final int currentIndex;
   final String? reciterName;
+  final Duration position;
+  final Duration? duration;
+  final double speed;
 
   bool get isPlaying => mode == PlaybackMode.playing;
   bool get isIdle => mode == PlaybackMode.idle;
+
+  /// Overall progress 0.0–1.0 (ayah-based with position within current ayah).
+  double get progress {
+    if (totalAyahs <= 0) return 0;
+    final durationMs = duration?.inMilliseconds ?? 1;
+    final positionMs = position.inMilliseconds;
+    final withinAyah = (positionMs / durationMs).clamp(0.0, 1.0);
+    return (currentIndex + withinAyah) / totalAyahs;
+  }
 
   AudioPlaybackState copyWith({
     PlaybackMode? mode,
@@ -32,6 +47,9 @@ class AudioPlaybackState extends Equatable {
     int? totalAyahs,
     int? currentIndex,
     String? reciterName,
+    Duration? position,
+    Duration? duration,
+    double? speed,
   }) {
     return AudioPlaybackState(
       mode: mode ?? this.mode,
@@ -41,6 +59,9 @@ class AudioPlaybackState extends Equatable {
       totalAyahs: totalAyahs ?? this.totalAyahs,
       currentIndex: currentIndex ?? this.currentIndex,
       reciterName: reciterName ?? this.reciterName,
+      position: position ?? this.position,
+      duration: duration ?? this.duration,
+      speed: speed ?? this.speed,
     );
   }
 
@@ -53,5 +74,8 @@ class AudioPlaybackState extends Equatable {
         totalAyahs,
         currentIndex,
         reciterName,
+        position,
+        duration,
+        speed,
       ];
 }

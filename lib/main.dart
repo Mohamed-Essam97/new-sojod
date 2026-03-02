@@ -10,6 +10,7 @@ import 'core/localization/app_localizations.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/audio_player/presentation/cubit/audio_player_cubit.dart';
+import 'features/audio_player/presentation/widgets/persistent_audio_player.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/notifications/data/services/notification_service.dart';
 import 'features/notifications/presentation/cubit/notification_cubit.dart';
@@ -74,7 +75,12 @@ class WirdApp extends StatelessWidget {
             ],
             builder: (context, child) => Directionality(
               textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-              child: child!,
+              child: Stack(
+                children: [
+                  child!,
+                  const PersistentAudioPlayer(),
+                ],
+              ),
             ),
           );
         },

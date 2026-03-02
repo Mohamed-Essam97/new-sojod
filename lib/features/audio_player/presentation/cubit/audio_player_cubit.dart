@@ -23,6 +23,8 @@ class AudioPlayerCubit extends Cubit<AudioPlaybackState> {
   QuranAudioHandler? _audioHandler;
   StreamSubscription<PlaybackState>? _playbackStateSub;
   StreamSubscription<MediaItem?>? _mediaItemSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration?>? _durationSub;
 
   Future<void> _initAudioService() async {
     try {
@@ -39,28 +41,45 @@ class AudioPlayerCubit extends Cubit<AudioPlaybackState> {
       _playbackStateSub = _audioHandler?.playbackState.listen((playbackState) {
         final isPlaying = playbackState.playing;
         final currentIndex = playbackState.queueIndex ?? 0;
-        
+        final completed = playbackState.processingState == AudioProcessingState.completed;
+
         emit(state.copyWith(
           mode: isPlaying ? PlaybackMode.playing : PlaybackMode.paused,
           currentIndex: currentIndex,
+          position: playbackState.updatePosition,
         ));
 
-        if (playbackState.processingState == AudioProcessingState.completed) {
-          emit(const AudioPlaybackState());
+        if (completed) {
+          _onPlaybackCompleted();
         }
       });
 
       _mediaItemSub = _audioHandler?.mediaItem.listen((item) {
         if (item != null) {
-          // Update current ayah from media item extras
           final ayahNumber = item.extras?['ayah'] as int?;
           if (ayahNumber != null) {
             emit(state.copyWith(currentAyah: ayahNumber));
           }
         }
       });
+
+      _positionSub = _audioHandler?.positionStream.listen((position) {
+        emit(state.copyWith(position: position));
+      });
+      _durationSub = _audioHandler?.durationStream.listen((duration) {
+        if (duration != null) emit(state.copyWith(duration: duration));
+      });
     } catch (e) {
-      // Fallback: audio_service not available, continue without background support
+      // Fallback: audio_service not available
+    }
+  }
+
+  void _onPlaybackCompleted() {
+    final surah = state.currentSurah;
+    if (surah != null && surah < 114) {
+      playSurah(surah + 1);
+    } else {
+      emit(const AudioPlaybackState());
     }
   }
 
@@ -205,10 +224,41 @@ class AudioPlayerCubit extends Cubit<AudioPlaybackState> {
     await _audioHandler?.skipToPrevious();
   }
 
+  /// Load and play the next surah (1–114). No-op if at 114.
+  Future<void> playNextSurah() async {
+    final current = state.currentSurah;
+    if (current == null || current >= 114) return;
+    await playSurah(current + 1);
+  }
+
+  /// Load and play the previous surah (1–114). No-op if at 1.
+  Future<void> playPreviousSurah() async {
+    final current = state.currentSurah;
+    if (current == null || current <= 1) return;
+    await playSurah(current - 1);
+  }
+
+  Future<void> seek(Duration position) async {
+    await _audioHandler?.seek(position);
+  }
+
+  Future<void> seekToAyah(int ayahIndex) async {
+    if (ayahIndex < 0 || ayahIndex >= state.totalAyahs) return;
+    await _audioHandler?.skipToQueueItem(ayahIndex);
+  }
+
+  Future<void> setSpeed(double speed) async {
+    if (speed < 0.5 || speed > 2.0) return;
+    await _audioHandler?.setSpeed(speed);
+    emit(state.copyWith(speed: speed));
+  }
+
   @override
   Future<void> close() {
     _playbackStateSub?.cancel();
     _mediaItemSub?.cancel();
+    _positionSub?.cancel();
+    _durationSub?.cancel();
     _audioHandler?.dispose();
     return super.close();
   }
