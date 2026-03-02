@@ -26,8 +26,23 @@ abstract class GroupRepository {
   
   Future<InviteEntity?> getInviteByCode(String code);
   Future<void> useInvite(String code);
-  
-  Future<void> joinGroup(String groupId, String userId, String displayName, String? photoUrl);
+
+  /// Joins a group using an invite code via Cloud Function (bypasses client Firestore rules).
+  /// Returns true if newly joined, false if already a member. Throws on invalid/expired/maxed.
+  Future<bool> joinGroupByCodeCallable({
+    required String code,
+    required String userId,
+    required String displayName,
+    String? photoUrl,
+  });
+
+  Future<void> joinGroup(
+    String groupId,
+    String userId,
+    String displayName,
+    String? photoUrl, {
+    String? inviteCode,
+  });
   Future<void> leaveGroup(String groupId, String userId);
   Future<List<GroupMemberEntity>> getGroupMembers(String groupId);
   Stream<List<GroupMemberEntity>> watchGroupMembers(String groupId);

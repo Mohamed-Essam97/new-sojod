@@ -30,9 +30,6 @@ class SettingsPage extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => sl<SettingsCubit>()),
-        BlocProvider(
-          create: (_) => sl<NotificationCubit>()..init(),
-        ),
       ],
       child: const _SettingsView(),
     );
@@ -175,6 +172,37 @@ class _SettingsView extends StatelessWidget {
                           ),
                           SettingsCardDivider(isDark: isDark),
                           SleepTimeTile(isDark: isDark),
+                          SettingsCardDivider(isDark: isDark),
+                          SettingsTile(
+                            icon: Icons.notifications_active_rounded,
+                            iconColor: AppColors.sky,
+                            title: isAr
+                                ? 'اختبار الإشعار (بعد دقيقتين)'
+                                : 'Test notification (in 2 minutes)',
+                            subtitle: isAr
+                                ? 'لتجربة إعدادات الإشعارات الحالية'
+                                : 'Quickly test your current notification setup',
+                            isDark: isDark,
+                            onTap: () async {
+                              final ok = await context
+                                  .read<NotificationCubit>()
+                                  .scheduleTestNotificationInTwoMinutes();
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    ok
+                                        ? (isAr
+                                            ? 'سيصلك إشعار تجريبي خلال دقيقتين'
+                                            : 'Test notification scheduled in 2 minutes')
+                                        : (isAr
+                                            ? 'لم يتم منح صلاحية الإشعارات'
+                                            : 'Notification permission not granted'),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ]);
                       },
                     ),

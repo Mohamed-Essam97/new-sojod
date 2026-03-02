@@ -11,6 +11,8 @@ abstract class NotificationRepository {
 
   Future<bool> requestPermissions();
 
+  Future<void> scheduleTestNotification(Duration delay);
+
   Future<void> schedulePrayerNotifications(
     List<PrayerTimesEntity> timesForDays,
     PrayerNotificationSettings settings,

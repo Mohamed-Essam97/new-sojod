@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../domain/usecases/create_group.dart';
 import '../../domain/usecases/create_invite.dart';
 import '../../domain/usecases/get_group_members.dart';
@@ -27,6 +29,7 @@ class GroupCubit extends Cubit<GroupState> {
   final CreateGroup _createGroup;
   final GetUserGroups _getUserGroups;
   final CreateInvite _createInvite;
+  // ignore: unused_field - kept for direct join flows / tests
   final JoinGroup _joinGroup;
   final GetGroupMembers _getGroupMembers;
   final GroupRepository _groupRepository;
@@ -82,29 +85,63 @@ class GroupCubit extends Cubit<GroupState> {
     String? photoUrl,
   }) async {
     try {
-      final invite = await _groupRepository.getInviteByCode(code);
-      if (invite == null) {
-        emit(const GroupError('Invalid invite code'));
-        return;
-      }
-
-      if (!invite.isValid) {
-        emit(const GroupError('Invite code expired or maxed out'));
-        return;
-      }
-
-      await _joinGroup(
-        groupId: invite.groupId,
+      // Use Cloud Function so invite lookup is not blocked by client Firestore rules
+      final newlyJoined = await _groupRepository.joinGroupByCodeCallable(
+        code: code,
         userId: userId,
         displayName: displayName,
         photoUrl: photoUrl,
       );
 
-      await _groupRepository.useInvite(code);
-      emit(const GroupSuccess('Joined group successfully'));
+      emit(newlyJoined
+          ? const GroupSuccess('Joined group successfully')
+          : const GroupSuccess('You are already a member of this group'));
       await loadUserGroups(userId);
-    } catch (e) {
-      emit(GroupError(e.toString()));
+    } on FirebaseFunctionsException catch (e, stack) {
+      debugPrint(
+        'Join group callable error: ${e.code} - ${e.message}\n$stack',
+      );
+      switch (e.code) {
+        case 'not-found':
+          emit(GroupError(
+            e.message?.isNotEmpty == true
+                ? e.message!
+                : 'Invalid invite code',
+          ));
+          break;
+        case 'failed-precondition':
+          emit(GroupError(
+            e.message?.isNotEmpty == true
+                ? e.message!
+                : 'Invite expired or usage limit reached',
+          ));
+          break;
+        case 'invalid-argument':
+          emit(const GroupError('Invalid invite code'));
+          break;
+        case 'unauthenticated':
+          emit(const GroupError('Please sign in to join a group'));
+          break;
+        case 'permission-denied':
+          emit(const GroupError('You do not have permission to join this group'));
+          break;
+        default:
+          emit(GroupError(
+            e.message?.isNotEmpty == true
+                ? e.message!
+                : 'Failed to join group. Please try again.',
+          ));
+      }
+    } on FirebaseException catch (e, stack) {
+      debugPrint('Firebase join group error: ${e.code} - ${e.message}\n$stack');
+      if (e.code == 'permission-denied') {
+        emit(const GroupError('You do not have permission to join this group'));
+      } else {
+        emit(GroupError('Failed to join group. ${e.message ?? e.code}'));
+      }
+    } catch (e, stack) {
+      debugPrint('Unknown join group error: $e\n$stack');
+      emit(const GroupError('Failed to join group. Please try again.'));
     }
   }
 

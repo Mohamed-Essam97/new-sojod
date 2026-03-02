@@ -10,7 +10,14 @@ class JoinGroup {
     required String userId,
     required String displayName,
     String? photoUrl,
+    String? inviteCode,
   }) {
-    return _repository.joinGroup(groupId, userId, displayName, photoUrl);
+    return _repository.joinGroup(
+      groupId,
+      userId,
+      displayName,
+      photoUrl,
+      inviteCode: inviteCode,
+    );
   }
 }

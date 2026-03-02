@@ -12,6 +12,7 @@ import 'core/theme/app_theme.dart';
 import 'features/audio_player/presentation/cubit/audio_player_cubit.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/notifications/data/services/notification_service.dart';
+import 'features/notifications/presentation/cubit/notification_cubit.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
 import 'features/wird/presentation/cubit/wird_cubit.dart';
@@ -43,6 +44,7 @@ class WirdApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => sl<SettingsCubit>()..loadSettings()),
+        BlocProvider(create: (_) => sl<NotificationCubit>()..init()),
         BlocProvider(create: (_) => sl<AudioPlayerCubit>()),
         BlocProvider(create: (_) => sl<AuthCubit>()..checkAuthStatus()),
         BlocProvider.value(value: sl<WirdCubit>()),

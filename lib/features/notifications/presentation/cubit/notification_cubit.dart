@@ -78,6 +78,18 @@ class NotificationCubit extends Cubit<NotificationState> {
     }
   }
 
+  Future<bool> scheduleTestNotificationInTwoMinutes() async {
+    var granted = state.permissionsGranted;
+    if (!granted) {
+      granted = await _repository.requestPermissions();
+      emit(state.copyWith(permissionsGranted: granted));
+    }
+    if (!granted) return false;
+
+    await _repository.scheduleTestNotification(const Duration(minutes: 2));
+    return true;
+  }
+
   Future<bool> requestPermissions() async {
     final granted = await _repository.requestPermissions();
     emit(state.copyWith(permissionsGranted: granted));

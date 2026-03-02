@@ -95,6 +95,12 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
+  Future<void> scheduleTestNotification(Duration delay) async {
+    await _service.initialize();
+    await _service.scheduleTestNotification(delay);
+  }
+
+  @override
   Future<void> schedulePrayerNotifications(
     List<PrayerTimesEntity> timesForDays,
     PrayerNotificationSettings settings,

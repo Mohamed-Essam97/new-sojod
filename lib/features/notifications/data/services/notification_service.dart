@@ -1,8 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../../features/prayer/domain/entities/prayer_time_entity.dart';
 import '../../domain/entities/adhkar_notification_settings.dart';
@@ -21,10 +22,18 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
     tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation(tz.local.name));
+    try {
+      tz.setLocalLocation(tz.getLocation(tz.local.name));
+    } catch (_) {
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    }
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: android);
+    const ios = DarwinInitializationSettings();
+    const initSettings = InitializationSettings(
+      android: android,
+      iOS: ios,
+    );
 
     await _plugin.initialize(
       initSettings,
@@ -72,6 +81,16 @@ class NotificationService {
                   AndroidFlutterLocalNotificationsPlugin>()
               ?.requestNotificationsPermission();
       if (androidInfo != null && !androidInfo) return false;
+    } else if (Platform.isIOS) {
+      final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      final granted = await iosPlugin?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          false;
+      if (!granted) return false;
     }
     return true;
   }
@@ -200,18 +219,16 @@ class NotificationService {
     required String body,
     required NotificationDetails details,
   }) async {
-    if (Platform.isAndroid) {
-      await _plugin.zonedSchedule(
-        id,
-        title,
-        body,
-        scheduledDate,
-        details,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
-    }
+    await _plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      scheduledDate,
+      details,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
   }
 
   Future<void> _scheduleDaily({
@@ -235,19 +252,17 @@ class NotificationService {
       scheduled = scheduled.add(const Duration(days: 1));
     }
 
-    if (Platform.isAndroid) {
-      await _plugin.zonedSchedule(
-        id,
-        _localizedTitle(titleKey),
-        _localizedBody(bodyKey),
-        scheduled,
-        details,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-      );
-    }
+    await _plugin.zonedSchedule(
+      id,
+      _localizedTitle(titleKey),
+      _localizedBody(bodyKey),
+      scheduled,
+      details,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
   }
 
   String _localizedTitle(String key) {
@@ -289,6 +304,7 @@ class NotificationService {
         importance: Importance.high,
         priority: Priority.high,
       ),
+      iOS: const DarwinNotificationDetails(),
     );
   }
 
@@ -301,6 +317,24 @@ class NotificationService {
         importance: Importance.high,
         priority: Priority.high,
       ),
+      iOS: const DarwinNotificationDetails(),
+    );
+  }
+
+  /// Schedule a one-off test notification after [delay].
+  Future<void> scheduleTestNotification(Duration delay) async {
+    await initialize();
+    final when = tz.TZDateTime.now(tz.local).add(delay);
+    final details = _prayerNotificationDetails();
+    await _plugin.zonedSchedule(
+      999, // dedicated test ID
+      'Test notification',
+      'This is a test reminder from Wird',
+      when,
+      details,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
 
