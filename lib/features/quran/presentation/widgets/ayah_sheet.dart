@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:quran_with_tafsir/quran_with_tafsir.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -92,7 +93,24 @@ class AyahSheet extends StatelessWidget {
                   _SheetAction(
                     icon: Icons.share_outlined,
                     label: 'Share',
-                    onTap: () {},
+                    onTap: () async {
+                      final englishAyah = cubit.getAyah(
+                        ayah.surahNumber,
+                        ayah.id,
+                        english: true,
+                      );
+                      final buffer = StringBuffer();
+                      buffer.writeln(ayah.text);
+                      if (englishAyah.text.trim().isNotEmpty) {
+                        buffer.writeln();
+                        buffer.writeln(englishAyah.text);
+                      }
+                      buffer.writeln();
+                      buffer.writeln(
+                          '${AppLocalizations.of(context).translate('ayahReference')} '
+                          '${ayah.surahNumber}:${ayah.id}');
+                      await Share.share(buffer.toString());
+                    },
                   ),
                 ],
               ),

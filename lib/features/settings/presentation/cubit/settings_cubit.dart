@@ -15,12 +15,12 @@ class SettingsCubit extends Cubit<SettingsState> {
           selectedReciter: _repository.getSelectedReciter(),
         ));
 
-  void setThemeMode(ThemeMode mode) async {
+  Future<void> setThemeMode(ThemeMode mode) async {
     await _repository.setThemeMode(mode);
     emit(state.copyWith(themeMode: mode));
   }
 
-  void setLocale(Locale locale) async {
+  Future<void> setLocale(Locale locale) async {
     await _repository.setLocale(locale);
     emit(state.copyWith(locale: locale));
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wird/core/theme/app_colors.dart';
 
 import 'reader_info_chip.dart';
 
@@ -12,6 +13,7 @@ class ReaderTopBar extends StatelessWidget {
     required this.bgColor,
     required this.textColor,
     required this.onSettings,
+    required this.onPlayFullSurah,
   });
 
   final int page;
@@ -21,6 +23,7 @@ class ReaderTopBar extends StatelessWidget {
   final Color bgColor;
   final Color textColor;
   final VoidCallback onSettings;
+  final VoidCallback onPlayFullSurah;
 
   @override
   Widget build(BuildContext context) {
@@ -85,10 +88,42 @@ class ReaderTopBar extends StatelessWidget {
                             ),
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.settings_outlined,
-                        color: textColor, size: 22),
-                    onPressed: onSettings,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.settings_outlined,
+                            color: textColor, size: 22),
+                        onPressed: onSettings,
+                      ),
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert_rounded,
+                            color: textColor, size: 22),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'playFullSurah':
+                              onPlayFullSurah();
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<String>(
+                            value: 'playFullSurah',
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: _PlayFullSurahMenuItem(
+                              textColor: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -116,6 +151,66 @@ class ReaderTopBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PlayFullSurahMenuItem extends StatelessWidget {
+  const _PlayFullSurahMenuItem({required this.textColor});
+
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final subtitleColor = textColor.withValues(alpha: isDark ? 0.7 : 0.6);
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.teal.withValues(alpha: isDark ? 0.25 : 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.play_circle_rounded,
+            size: 24,
+            color: AppColors.teal,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Play full surah',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Listen to the entire surah',
+                style: TextStyle(
+                  color: subtitleColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Icon(
+          Icons.chevron_right_rounded,
+          size: 20,
+          color: subtitleColor,
+        ),
+      ],
     );
   }
 }

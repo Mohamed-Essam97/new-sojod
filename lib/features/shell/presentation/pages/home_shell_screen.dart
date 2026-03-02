@@ -44,7 +44,7 @@ class _HomeShellView extends StatelessWidget {
                   SettingsPage(),
                 ],
               ),
-              const PersistentAudioPlayer(),
+              // const PersistentAudioPlayer(),
             ],
           ),
           bottomNavigationBar: CustomBottomNavBar(

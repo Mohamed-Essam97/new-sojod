@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:quran_with_tafsir/quran_with_tafsir.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -100,22 +102,23 @@ class AyahContextMenu {
           break;
 
         case 'translate':
+          final englishAyah =
+              cubit.getAyah(ayah.surahNumber, ayah.id, english: true);
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.translate('comingSoon')),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            _showTranslationDialog(context, ayah, englishAyah.text);
           }
           break;
 
         case 'bookmark':
-          cubit.toggleBookmark(ayah.surahNumber, ayah.id);
+          final wasBookmarked =
+              await cubit.isBookmarked(ayah.surahNumber, ayah.id);
+          await cubit.toggleBookmark(ayah.surahNumber, ayah.id);
           if (context.mounted) {
+            final key =
+                wasBookmarked ? 'bookmarkRemoved' : 'bookmarkAdded';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(l10n.translate('bookmarkAdded')),
+                content: Text(l10n.translate(key)),
                 behavior: SnackBarBehavior.floating,
                 backgroundColor: AppColors.teal,
                 duration: const Duration(seconds: 1),
@@ -125,14 +128,18 @@ class AyahContextMenu {
           break;
 
         case 'share':
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.translate('comingSoon')),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+          final englishAyah =
+              cubit.getAyah(ayah.surahNumber, ayah.id, english: true);
+          final buffer = StringBuffer();
+          buffer.writeln(ayah.text);
+          if (englishAyah.text.trim().isNotEmpty) {
+            buffer.writeln();
+            buffer.writeln(englishAyah.text);
           }
+          buffer.writeln();
+          buffer.writeln('${l10n.translate('ayahReference')} '
+              '${ayah.surahNumber}:${ayah.id}');
+          await Share.share(buffer.toString());
           break;
       }
     });
@@ -266,6 +273,89 @@ class AyahContextMenu {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _showTranslationDialog(
+      BuildContext context, Ayah ayah, String? translation) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final l10n = AppLocalizations.of(context);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.all(24),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.teal.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${ayah.surahNumber}:${ayah.id}',
+                      style: const TextStyle(
+                        color: AppColors.teal,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 20),
+                    color: textPrimary,
+                    onPressed: () {
+                      final englishText = translation ?? '';
+                      final textToCopy =
+                          '${ayah.text}\n\n$englishText\n\n${l10n.translate('ayahReference')} '
+                          '${ayah.surahNumber}:${ayah.id}';
+                      Clipboard.setData(ClipboardData(text: textToCopy));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.translate('copied')),
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.of(context).pop(),
+                    color: textPrimary,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                translation == null || translation.trim().isEmpty
+                    ? l10n.translate('noTranslationAvailable')
+                    : translation,
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.7,
+                  color: textPrimary.withValues(alpha: 0.9),
+                ),
+              ),
             ],
           ),
         ),

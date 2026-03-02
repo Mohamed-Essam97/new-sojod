@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/app_restart.dart';
 import 'core/di/injection.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/routing/app_router.dart';
@@ -26,7 +27,12 @@ void main() async {
   await initInjection();
   await sl<NotificationService>().initialize();
   _appRouter = createAppRouter();
-  runApp(const WirdApp());
+  runApp(
+    ValueListenableBuilder<int>(
+      valueListenable: appRestartKey,
+      builder: (_, key, __) => WirdApp(key: ValueKey(key)),
+    ),
+  );
 }
 
 class WirdApp extends StatelessWidget {

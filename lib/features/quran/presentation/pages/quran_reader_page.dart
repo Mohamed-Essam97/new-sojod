@@ -118,10 +118,6 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _loadSurahInfo(context, _currentPage);
-        // Auto-play if initialSurah is provided
-        if (widget.initialSurah != null) {
-          _autoPlaySurah(context, widget.initialSurah!);
-        }
       }
     });
   }
@@ -399,28 +395,31 @@ class _QuranReaderViewState extends State<_QuranReaderView> {
                       bgColor: bgColor,
                       textColor: textColor,
                       onSettings: () => _showSettings(context),
+                      onPlayFullSurah: () => _togglePlaySurah(context),
                     ),
                   ),
 
                   // ── Floating audio player ────────────────────────
-                  Positioned(
-                    left: 24,
-                    right: 24,
-                    bottom: 72,
-                    child: FloatingAudioPlayer(
-                      isPlaying: _isPlayingSurah,
-                      surahName: _playingSurahName,
-                      totalAyahs: _playingTotalAyahs,
-                      playingIndexNotifier: _playingIndexNotifier,
-                      audioPlayer: widget.audioPlayer,
-                      reciter: _currentReciter,
-                      l10n: AppLocalizations.of(context),
-                      isRtl: Directionality.of(context) == TextDirection.rtl,
-                      onPlay: () => _togglePlaySurah(context),
-                      onStop: _stopPlayback,
-                      onChangeReciter: () => _onChangeReciter(context),
+                  if (_isPlayingSurah)
+                    Positioned(
+                      left: 24,
+                      right: 24,
+                      bottom: 72,
+                      child: FloatingAudioPlayer(
+                        isPlaying: true,
+                        surahName: _playingSurahName,
+                        totalAyahs: _playingTotalAyahs,
+                        playingIndexNotifier: _playingIndexNotifier,
+                        audioPlayer: widget.audioPlayer,
+                        reciter: _currentReciter,
+                        l10n: AppLocalizations.of(context),
+                        isRtl:
+                            Directionality.of(context) == TextDirection.rtl,
+                        onPlay: () => _togglePlaySurah(context),
+                        onStop: _stopPlayback,
+                        onChangeReciter: () => _onChangeReciter(context),
+                      ),
                     ),
-                  ),
 
                   // ── Wird progress pill ──────────────────────────
                   Positioned(

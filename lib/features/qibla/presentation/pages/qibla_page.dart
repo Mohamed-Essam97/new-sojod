@@ -23,8 +23,11 @@ class QiblaPage extends StatefulWidget {
 class _QiblaPageState extends State<QiblaPage>
     with SingleTickerProviderStateMixin {
   double _heading = 0;
+  double? _rawHeading;
   double? _qiblaDirection;
   bool _isLoading = true;
+  bool _compassAvailable = true;
+  bool _locationPermissionDenied = false;
   String? _locationName;
   StreamSubscription<CompassEvent>? _compassSub;
 
@@ -47,15 +50,55 @@ class _QiblaPageState extends State<QiblaPage>
   }
 
   void _initCompass() {
-    _compassSub = FlutterCompass.events?.listen((event) {
-      if (event.heading != null && mounted) {
-        setState(() => _heading = (event.heading! + 180) % 360);
+    final stream = FlutterCompass.events;
+    if (stream == null) {
+      setState(() {
+        _compassAvailable = false;
+      });
+      return;
+    }
+
+    _compassSub = stream.listen((event) {
+      final newHeading = event.heading;
+      if (!mounted) return;
+      if (newHeading == null) {
+        setState(() {
+          _compassAvailable = false;
+        });
+        return;
       }
+
+      _compassAvailable = true;
+
+      // Low-pass filter to smooth sensor noise and rotation.
+      const alpha = 0.15;
+      if (_rawHeading == null) {
+        _rawHeading = newHeading;
+        _heading = newHeading;
+      } else {
+        // Shortest-path interpolation across 0/360 wrap.
+        final diff =
+            ((newHeading - _heading + 540) % 360) - 180; // range [-180, 180]
+        _heading = (_heading + alpha * diff + 360) % 360;
+        _rawHeading = newHeading;
+      }
+
+      setState(() {});
     });
   }
 
   Future<void> _calculateQibla() async {
     try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() {
+          _locationPermissionDenied = true;
+          _isLoading = false;
+        });
+        return;
+      }
+
       final pos = await Geolocator.getCurrentPosition();
       final coords = Coordinates(pos.latitude, pos.longitude);
       final qibla = Qibla(coords);
@@ -110,40 +153,144 @@ class _QiblaPageState extends State<QiblaPage>
                 ? const Center(
                     child: CircularProgressIndicator(color: AppColors.teal),
                   )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 24),
-                        InfoRow(
-                          heading: _heading,
-                          qibla: _qiblaDirection ?? 0,
-                          isDark: isDark,
+                : _locationPermissionDenied
+                    ? _LocationPermissionView(
+                        isDark: isDark,
+                        onRequestPermission: () async {
+                          final result =
+                              await Geolocator.requestPermission();
+                          if (result == LocationPermission.always ||
+                              result == LocationPermission.whileInUse) {
+                            setState(() {
+                              _locationPermissionDenied = false;
+                              _isLoading = true;
+                            });
+                            await _calculateQibla();
+                          }
+                        },
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 24),
+                            InfoRow(
+                              heading: _heading,
+                              qibla: _qiblaDirection ?? 0,
+                              isDark: isDark,
+                            ),
+                            const SizedBox(height: 32),
+                            if (_compassAvailable)
+                              CompassWidget(
+                                heading: _heading,
+                                qiblaDirection: _qiblaDirection ?? 0,
+                                isDark: isDark,
+                                isAligned: _isAligned,
+                                pulseAnimation: _pulseAnimation,
+                              )
+                            else
+                              _CompassUnavailableView(isDark: isDark),
+                            const SizedBox(height: 32),
+                            DirectionHint(
+                              hint: directionHint,
+                              isAligned: _isAligned,
+                              angleDiff: _angleDiff,
+                              isDark: isDark,
+                            ),
+                            const SizedBox(height: 24),
+                            KaabaCard(isDark: isDark),
+                            const SizedBox(height: 32),
+                          ],
                         ),
-                        const SizedBox(height: 32),
-                        CompassWidget(
-                          heading: _heading,
-                          qiblaDirection: _qiblaDirection ?? 0,
-                          isDark: isDark,
-                          isAligned: _isAligned,
-                          pulseAnimation: _pulseAnimation,
-                        ),
-                        const SizedBox(height: 32),
-                        DirectionHint(
-                          hint: directionHint,
-                          isAligned: _isAligned,
-                          angleDiff: _angleDiff,
-                          isDark: isDark,
-                        ),
-                        const SizedBox(height: 24),
-                        KaabaCard(isDark: isDark),
-                        const SizedBox(height: 32),
-                      ],
-                    ),
-                  ),
+                      ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LocationPermissionView extends StatelessWidget {
+  const _LocationPermissionView({
+    required this.isDark,
+    required this.onRequestPermission,
+  });
+
+  final bool isDark;
+  final Future<void> Function() onRequestPermission;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_off_rounded,
+              size: 64,
+              color: isDark ? Colors.white54 : Colors.grey[600],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.translate('locationPermissionRequired'),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.translate('enableLocationForQibla'),
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onRequestPermission,
+              icon: const Icon(Icons.my_location_rounded),
+              label: Text(l10n.translate('enableLocation')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompassUnavailableView extends StatelessWidget {
+  const _CompassUnavailableView({required this.isDark});
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      children: [
+        Icon(
+          Icons.explore_off_rounded,
+          size: 52,
+          color: isDark ? Colors.white54 : Colors.grey[600],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          l10n.translate('compassUnavailable'),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white70 : Colors.grey[700],
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

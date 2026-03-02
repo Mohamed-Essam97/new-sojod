@@ -19,7 +19,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         backgroundColor: AppColors.lightBackground,
-        foregroundColor: AppColors.darkText,
+        // foregroundColor: AppColors.darkText,
       ),
       cardTheme: CardThemeData(
         elevation: 2,
@@ -62,7 +62,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         backgroundColor: AppColors.darkBackground,
-        foregroundColor: Colors.white,
+        // foregroundColor: Colors.white,
       ),
       cardTheme: CardThemeData(
         elevation: 2,

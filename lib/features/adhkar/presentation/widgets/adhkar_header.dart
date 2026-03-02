@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:wird/core/assets/app_svgs.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -63,10 +65,11 @@ class AdhkarHeader extends StatelessWidget {
                             color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(
-                            Icons.auto_awesome_rounded,
+                          child: SvgPicture.asset(
+                            AppSvgs.dua,
                             color: Colors.white,
-                            size: 22,
+                            width: 22,
+                            height: 22,
                           ),
                         ),
                         const SizedBox(width: 12),

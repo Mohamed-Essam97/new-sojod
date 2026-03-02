@@ -199,7 +199,8 @@ class _SettingsView extends StatelessWidget {
                         isDark: isDark,
                         showChevron: false,
                       ),
-                    ]),
+                    ]),                    const SizedBox(height: 50),
+
                   ]),
                 ),
               ),

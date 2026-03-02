@@ -24,11 +24,6 @@ class CompassPainter extends CustomPainter {
     final dialR = outerR - 14;
     final innerR = dialR - 22;
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(-heading * math.pi / 180);
-    canvas.translate(-center.dx, -center.dy);
-
     final shadowPaint = Paint()
       ..color = (isDark ? Colors.black : Colors.grey).withOpacity(0.18)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
@@ -126,8 +121,7 @@ class CompassPainter extends CustomPainter {
         ..strokeWidth = 1,
     );
 
-    canvas.restore();
-
+    // Arrow angle: relative difference between Qibla bearing and device heading.
     final qiblaAngle = (qiblaDirection - heading) * math.pi / 180;
     _drawQiblaArrow(canvas, center, innerR - 4, qiblaAngle);
 

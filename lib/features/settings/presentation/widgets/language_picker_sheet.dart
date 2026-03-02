@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/app_restart.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../cubit/settings_cubit.dart';
 import 'picker_option.dart';
@@ -61,9 +62,12 @@ class LanguagePickerSheet extends StatelessWidget {
                 subtitle: opt.$4,
                 isSelected: isSelected,
                 isDark: isDark,
-                onTap: () {
-                  context.read<SettingsCubit>().setLocale(opt.$1);
-                  Navigator.pop(context);
+                onTap: () async {
+                  await context.read<SettingsCubit>().setLocale(opt.$1);
+                  if (context.mounted) {
+                    AppRestart.restart();
+                    Navigator.pop(context);
+                  }
                 },
               );
             }),

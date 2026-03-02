@@ -38,28 +38,35 @@ class _GroupDetailsView extends StatelessWidget {
     final isAr = l10n.locale.languageCode == 'ar';
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A1929) : Colors.grey[50],
+      backgroundColor: AppColors.surface(context),
       body: BlocConsumer<GroupCubit, GroupState>(
+        listenWhen: (prev, curr) => curr is GroupError,
         listener: (context, state) {
           if (state is GroupError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.red,
+                behavior: SnackBarBehavior.floating,
               ),
             );
           }
         },
+        buildWhen: (prev, curr) =>
+            curr is GroupLoading || curr is GroupDetailsLoaded,
         builder: (context, state) {
           if (state is GroupLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.violet),
+            );
           }
 
           if (state is GroupDetailsLoaded) {
             final group = state.group;
             final members = state.members;
             final authState = context.read<AuthCubit>().state;
-            final currentUserId = authState is AuthAuthenticated ? authState.user.uid : null;
+            final currentUserId =
+                authState is AuthAuthenticated ? authState.user.uid : null;
             final isOwner = currentUserId == group.ownerId;
 
             return CustomScrollView(
@@ -68,30 +75,40 @@ class _GroupDetailsView extends StatelessWidget {
                   expandedHeight: 200,
                   pinned: true,
                   backgroundColor: AppColors.violet,
+                  foregroundColor: Colors.white,
                   flexibleSpace: FlexibleSpaceBar(
                     title: Text(
                       group.name,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
                     background: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppColors.violet, AppColors.violet.withValues(alpha: 0.7)],
+                          colors: [
+                            AppColors.violet,
+                            AppColors.violet.withValues(alpha: 0.75),
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                       ),
-                      child: group.photoUrl != null && group.photoUrl!.isNotEmpty
+                      child: group.photoUrl != null &&
+                              group.photoUrl!.isNotEmpty
                           ? Image.network(
                               group.photoUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _DefaultGroupImage(),
+                              loadingBuilder: (context, child, progress) =>
+                                  progress == null
+                                      ? child
+                                      : const _DefaultGroupImage(),
+                              errorBuilder: (_, __, ___) =>
+                                  const _DefaultGroupImage(),
                             )
-                          : _DefaultGroupImage(),
+                          : const _DefaultGroupImage(),
                     ),
                   ),
                 ),
@@ -101,19 +118,30 @@ class _GroupDetailsView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (group.description != null && group.description!.isNotEmpty) ...[
+                        if (group.description != null &&
+                            group.description!.isNotEmpty) ...[
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1A2332) : Colors.white,
+                              color: AppColors.card(context),
                               borderRadius: BorderRadius.circular(12),
+                              boxShadow: isDark
+                                  ? null
+                                  : [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.06),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                             ),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(
-                                  Icons.info_outline,
+                                  Icons.info_outline_rounded,
                                   color: AppColors.violet,
-                                  size: 20,
+                                  size: 22,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -121,7 +149,8 @@ class _GroupDetailsView extends StatelessWidget {
                                     group.description!,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: isDark ? Colors.white70 : Colors.grey[700],
+                                      height: 1.4,
+                                      color: AppColors.onSurfaceMutedColor(context),
                                     ),
                                   ),
                                 ),
@@ -132,16 +161,15 @@ class _GroupDetailsView extends StatelessWidget {
                         ],
                         if (isOwner) ...[
                           _InviteCard(
-                            groupId: groupId,
                             isAr: isAr,
-                            isDark: isDark,
                             onGenerateInvite: () async {
-                              final authState = context.read<AuthCubit>().state;
+                              final authState =
+                                  context.read<AuthCubit>().state;
                               if (authState is AuthAuthenticated) {
-                                final code = await context.read<GroupCubit>().generateInviteCode(
-                                      groupId,
-                                      authState.user.uid,
-                                    );
+                                final code = await context
+                                    .read<GroupCubit>()
+                                    .generateInviteCode(
+                                        groupId, authState.user.uid);
                                 if (code != null && context.mounted) {
                                   _showInviteCodeDialog(context, code, isAr);
                                 }
@@ -150,18 +178,15 @@ class _GroupDetailsView extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                         ],
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              isAr ? 'الأعضاء (${members.length})' : 'Members (${members.length})',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          isAr
+                              ? 'الأعضاء (${members.length})'
+                              : 'Members (${members.length})',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.onSurfaceColor(context),
+                          ),
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -175,12 +200,15 @@ class _GroupDetailsView extends StatelessWidget {
                       (context, index) {
                         final member = members[index];
                         return MemberCard(
+                          key: ValueKey(member.uid),
                           member: member,
                           isOwner: member.uid == group.ownerId,
                           isDark: isDark,
                         );
                       },
                       childCount: members.length,
+                      addAutomaticKeepAlives: true,
+                      addRepaintBoundaries: true,
                     ),
                   ),
                 ),
@@ -189,27 +217,36 @@ class _GroupDetailsView extends StatelessWidget {
             );
           }
 
-          return const SizedBox.shrink();
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.violet),
+          );
         },
       ),
     );
   }
 
-  void _showInviteCodeDialog(BuildContext context, String code, bool isAr) {
-    showDialog(
+  static void _showInviteCodeDialog(
+      BuildContext context, String code, bool isAr) {
+    showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: Row(
           children: [
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.violet.withValues(alpha: 0.1),
+                color: AppColors.violet.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.qr_code, color: AppColors.violet, size: 22),
+              child: const Icon(
+                Icons.qr_code_rounded,
+                color: AppColors.violet,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 12),
             Text(isAr ? 'كود الدعوة' : 'Invite Code'),
@@ -219,15 +256,15 @@ class _GroupDetailsView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
                 color: AppColors.violet.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
+              child: SelectableText(
                 code,
                 style: const TextStyle(
-                  fontSize: 32,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 4,
                   color: AppColors.violet,
@@ -241,7 +278,7 @@ class _GroupDetailsView extends StatelessWidget {
                   : 'Share this code with friends to join the group',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: AppColors.onSurfaceMutedColor(context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -249,18 +286,24 @@ class _GroupDetailsView extends StatelessWidget {
         ),
         actions: [
           TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(isAr ? 'إغلاق' : 'Close'),
+          ),
+          TextButton.icon(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: code));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(isAr ? 'تم النسخ' : 'Copied'),
                   backgroundColor: AppColors.teal,
+                  behavior: SnackBarBehavior.floating,
                 ),
               );
             },
-            child: Text(isAr ? 'نسخ' : 'Copy'),
+            icon: const Icon(Icons.copy_rounded, size: 18),
+            label: Text(isAr ? 'نسخ' : 'Copy'),
           ),
-          ElevatedButton(
+          FilledButton.icon(
             onPressed: () {
               Share.share(
                 isAr
@@ -268,11 +311,12 @@ class _GroupDetailsView extends StatelessWidget {
                     : 'Join my Wird group! Use code: $code',
               );
             },
-            style: ElevatedButton.styleFrom(
+            icon: const Icon(Icons.share_rounded, size: 18),
+            label: Text(isAr ? 'مشاركة' : 'Share'),
+            style: FilledButton.styleFrom(
               backgroundColor: AppColors.violet,
               foregroundColor: Colors.white,
             ),
-            child: Text(isAr ? 'مشاركة' : 'Share'),
           ),
         ],
       ),
@@ -281,13 +325,15 @@ class _GroupDetailsView extends StatelessWidget {
 }
 
 class _DefaultGroupImage extends StatelessWidget {
+  const _DefaultGroupImage();
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Icon(
         Icons.groups_rounded,
         size: 80,
-        color: Colors.white.withValues(alpha: 0.3),
+        color: Colors.white.withValues(alpha: 0.35),
       ),
     );
   }
@@ -295,76 +341,88 @@ class _DefaultGroupImage extends StatelessWidget {
 
 class _InviteCard extends StatelessWidget {
   const _InviteCard({
-    required this.groupId,
     required this.isAr,
-    required this.isDark,
     required this.onGenerateInvite,
   });
 
-  final String groupId;
   final bool isAr;
-  final bool isDark;
   final VoidCallback onGenerateInvite;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.emerald, AppColors.emerald.withValues(alpha: 0.8)],
+          colors: [
+            AppColors.emerald,
+            AppColors.emerald.withValues(alpha: 0.82),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.emerald.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: onGenerateInvite,
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person_add_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isAr ? 'دعوة أعضاء جدد' : 'Invite Members',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onGenerateInvite,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isAr ? 'إنشاء كود دعوة للمجموعة' : 'Generate invite code',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
+                  child: const Icon(
+                    Icons.person_add_rounded,
+                    color: Colors.white,
+                    size: 24,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isAr ? 'دعوة أعضاء جدد' : 'Invite Members',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isAr ? 'إنشاء كود دعوة للمجموعة' : 'Generate invite code',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ],
             ),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-          ],
+          ),
         ),
       ),
     );
