@@ -70,6 +70,7 @@ dependencies:
   share_plus: ^10.1.2
   image_picker: ^1.1.2
   firebase_storage: ^12.3.7
+  flutter_native_splash: ^2.4.3
 
 dev_dependencies:
   flutter_test:
@@ -100,3 +101,13 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/logo/app_icon.png"
   remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#0D1F24"
+  color_dark: "#0D1F24"
+  android_12:
+    color: "#0D1F24"
+  image: "assets/logo/app_icon.png"
+  android: true
+  ios: true
+  fullscreen: true

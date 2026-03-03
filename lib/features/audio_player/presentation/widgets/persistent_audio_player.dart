@@ -128,11 +128,11 @@ class PersistentAudioPlayer extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _PlayerButton(
-                        icon: Icons.skip_previous_rounded,
-                        onTap: () =>
-                            context.read<AudioPlayerCubit>().skipPrevious(),
+                    _PlayerButton(
+                        icon: Icons.skip_next_rounded,
+                        onTap: () => context.read<AudioPlayerCubit>().skipNext(),
                       ),
+                      
                       _PlayerButton(
                         icon: state.isPlaying
                             ? Icons.pause_rounded
@@ -141,9 +141,10 @@ class PersistentAudioPlayer extends StatelessWidget {
                         onTap: () =>
                             context.read<AudioPlayerCubit>().togglePlayPause(),
                       ),
-                      _PlayerButton(
-                        icon: Icons.skip_next_rounded,
-                        onTap: () => context.read<AudioPlayerCubit>().skipNext(),
+                        _PlayerButton(
+                        icon: Icons.skip_previous_rounded,
+                        onTap: () =>
+                            context.read<AudioPlayerCubit>().skipPrevious(),
                       ),
                       _PlayerButton(
                         icon: Icons.close_rounded,

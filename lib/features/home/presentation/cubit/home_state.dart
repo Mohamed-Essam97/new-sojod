@@ -66,10 +66,24 @@ class HomeState extends Equatable {
     );
   }
 
+  /// Countdown to the displayed prayer. Builds the target moment in local time
+  /// from the prayer's date and time-of-day so it stays correct when adhan
+  /// returns UTC-with-offset (local clock stored as UTC).
   Duration? get countdown {
-    final t = displayedPrayer?.time;
-    if (t == null) return null;
-    final d = t.difference(DateTime.now());
+    final selection = displayedPrayer;
+    if (selection == null) return null;
+    final date = selection.date;
+    final t = selection.time;
+    final now = DateTime.now();
+    final localPrayerMoment = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      t.hour,
+      t.minute,
+      t.second,
+    );
+    final d = localPrayerMoment.difference(now);
     return d.isNegative ? null : d;
   }
 
