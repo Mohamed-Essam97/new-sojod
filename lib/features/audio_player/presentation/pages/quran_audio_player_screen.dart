@@ -9,8 +9,8 @@ import '../../../quran/domain/repositories/quran_repository.dart';
 import '../../../reciters/domain/entities/reciter.dart';
 import '../../../reciters/domain/repositories/reciter_repository.dart';
 import '../../../reciters/presentation/widgets/reciter_selection_sheet.dart';
-import '../../domain/entities/playback_state.dart';
 import '../cubit/audio_player_cubit.dart';
+import '../widgets/persistent_audio_player.dart';
 
 class QuranAudioPlayerScreen extends StatelessWidget {
   const QuranAudioPlayerScreen({super.key});
@@ -36,46 +36,57 @@ class QuranAudioPlayerScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Stack(
         children: [
-          _ReciterCard(
-            reciter: reciterRepo.getSelectedReciter(),
-            isDark: isDark,
-            isAr: isAr,
-            onTap: () => _showReciterSheet(context, isDark),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              isAr ? 'اختر سورة' : 'Select Surah',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _ReciterCard(
+                reciter: reciterRepo.getSelectedReciter(),
+                isDark: isDark,
+                isAr: isAr,
+                onTap: () => _showReciterSheet(context, isDark),
               ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
-              itemCount: surahs.length,
-              itemBuilder: (context, i) {
-                final s = surahs[i];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _SurahRow(
-                    number: s.number,
-                    nameAr: s.nameAr,
-                    nameEn: s.nameEn,
-                    ayahCount: s.ayahCount,
-                    isDark: isDark,
-                    isAr: isAr,
-                    onTap: () => context.read<AudioPlayerCubit>().playSurah(s.number),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Text(
+                  isAr ? 'اختر سورة' : 'Select Surah',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+                  itemCount: surahs.length,
+                  itemBuilder: (context, i) {
+                    final s = surahs[i];
+                    return Padding(
+                      key: ValueKey<int>(s.number),
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _SurahRow(
+                        number: s.number,
+                        nameAr: s.nameAr,
+                        nameEn: s.nameEn,
+                        ayahCount: s.ayahCount,
+                        isDark: isDark,
+                        isAr: isAr,
+                        onTap: () => context.read<AudioPlayerCubit>().playSurah(s.number),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: PersistentAudioPlayer(),
           ),
         ],
       ),

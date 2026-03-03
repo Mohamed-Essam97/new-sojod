@@ -10,6 +10,7 @@ import 'core/di/injection.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/audio_player/domain/entities/playback_state.dart';
 import 'features/audio_player/presentation/cubit/audio_player_cubit.dart';
 import 'features/audio_player/presentation/widgets/persistent_audio_player.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
@@ -80,7 +81,13 @@ class WirdApp extends StatelessWidget {
               child: Stack(
                 children: [
                   child!,
-                  const PersistentAudioPlayer(),
+                  BlocBuilder<AudioPlayerCubit, AudioPlaybackState>(
+                    buildWhen: (prev, curr) => prev.isIdle != curr.isIdle,
+                    builder: (context, state) {
+                      if (!state.isPlaying) return const SizedBox.shrink();
+                      return const PersistentAudioPlayer();
+                    },
+                  ),
                 ],
               ),
             ),

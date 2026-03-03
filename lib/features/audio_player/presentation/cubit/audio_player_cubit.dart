@@ -85,6 +85,9 @@ class AudioPlayerCubit extends Cubit<AudioPlaybackState> {
 
   Future<void> playSurah(int surahNumber, {Reciter? customReciter}) async {
     try {
+      // Update selection immediately so only one surah appears selected
+      emit(state.copyWith(currentSurah: surahNumber));
+
       final surah = _quranRepository.getSurah(surahNumber);
       if (surah.verses.isEmpty) return;
 

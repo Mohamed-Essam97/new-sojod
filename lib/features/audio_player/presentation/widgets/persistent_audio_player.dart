@@ -124,15 +124,16 @@ class PersistentAudioPlayer extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Playback Controls
+                  // Playback Controls (follow app direction for RTL)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    textDirection: Directionality.of(context),
                     children: [
-                    _PlayerButton(
-                        icon: Icons.skip_next_rounded,
-                        onTap: () => context.read<AudioPlayerCubit>().skipNext(),
+                      _PlayerButton(
+                        icon: Icons.skip_previous_rounded,
+                        onTap: () =>
+                            context.read<AudioPlayerCubit>().skipPrevious(),
                       ),
-                      
                       _PlayerButton(
                         icon: state.isPlaying
                             ? Icons.pause_rounded
@@ -141,10 +142,10 @@ class PersistentAudioPlayer extends StatelessWidget {
                         onTap: () =>
                             context.read<AudioPlayerCubit>().togglePlayPause(),
                       ),
-                        _PlayerButton(
-                        icon: Icons.skip_previous_rounded,
+                      _PlayerButton(
+                        icon: Icons.skip_next_rounded,
                         onTap: () =>
-                            context.read<AudioPlayerCubit>().skipPrevious(),
+                            context.read<AudioPlayerCubit>().skipNext(),
                       ),
                       _PlayerButton(
                         icon: Icons.close_rounded,
