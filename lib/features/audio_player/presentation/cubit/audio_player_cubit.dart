@@ -113,9 +113,7 @@ class AudioPlayerCubit extends Cubit<AudioPlaybackState> {
         album: meta.nameEn,
         title: 'Ayah ${v.id}',
         artist: reciter.name,
-        artUri: (reciter.imageUrl != null && reciter.imageUrl!.isNotEmpty) 
-            ? Uri.parse(reciter.imageUrl!) 
-            : null,
+        artUri: _artUriFromReciter(reciter.imageUrl),
         extras: {'surah': surahNumber, 'ayah': v.id},
       )).toList();
 
@@ -158,9 +156,7 @@ class AudioPlayerCubit extends Cubit<AudioPlaybackState> {
         album: meta.nameEn,
         title: 'Ayah $ayahNumber',
         artist: reciter.name,
-        artUri: (reciter.imageUrl != null && reciter.imageUrl!.isNotEmpty) 
-            ? Uri.parse(reciter.imageUrl!) 
-            : null,
+        artUri: _artUriFromReciter(reciter.imageUrl),
         extras: {'surah': surahNumber, 'ayah': ayahNumber},
       );
 
@@ -254,6 +250,16 @@ class AudioPlayerCubit extends Cubit<AudioPlaybackState> {
     if (speed < 0.5 || speed > 2.0) return;
     await _audioHandler?.setSpeed(speed);
     emit(state.copyWith(speed: speed));
+  }
+
+  /// Only use http(s) URLs for MediaItem.artUri. Asset paths cause "No host specified" when fetched.
+  static Uri? _artUriFromReciter(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return null;
+    final u = imageUrl.trimLeft().toLowerCase();
+    if (u.startsWith('http://') || u.startsWith('https://')) {
+      return Uri.parse(imageUrl);
+    }
+    return null;
   }
 
   @override

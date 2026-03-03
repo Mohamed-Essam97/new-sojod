@@ -89,8 +89,13 @@ class WirdApp extends StatelessWidget {
                       if (state.isIdle || !state.isPlaying) {
                         return const SizedBox.shrink();
                       }
-                      return RepaintBoundary(
-                        child: const PersistentAudioPlayer(),
+                      return Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 80,
+                        child: RepaintBoundary(
+                          child: const PersistentAudioPlayer(),
+                        ),
                       );
                     },
                   ),

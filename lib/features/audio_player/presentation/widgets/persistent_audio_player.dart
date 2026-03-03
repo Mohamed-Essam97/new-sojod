@@ -41,11 +41,7 @@ class PersistentAudioPlayer extends StatelessWidget {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final reciter = sl<ReciterRepository>().getSelectedReciter();
 
-        return Positioned(
-          left: 16,
-          right: 16,
-          bottom: 80,
-          child: Material(
+        return Material(
             elevation: 12,
             borderRadius: BorderRadius.circular(16),
             child: Container(
@@ -182,8 +178,7 @@ class PersistentAudioPlayer extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        );
+          );
       },
     );
   }
