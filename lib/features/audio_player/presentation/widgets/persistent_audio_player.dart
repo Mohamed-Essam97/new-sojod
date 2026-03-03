@@ -12,9 +12,28 @@ import '../cubit/audio_player_cubit.dart';
 class PersistentAudioPlayer extends StatelessWidget {
   const PersistentAudioPlayer({super.key});
 
+  static const TextStyle _playerTitleStyle = TextStyle(
+    color: Colors.white,
+    fontFamily: 'QuranFont',
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+  );
+
+  static const TextStyle _playerSubtitleStyle = TextStyle(
+    color: Colors.white70,
+    fontSize: 11,
+  );
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AudioPlayerCubit, AudioPlaybackState>(
+      buildWhen: (prev, curr) =>
+          prev.isIdle != curr.isIdle ||
+          prev.surahName != curr.surahName ||
+          prev.currentIndex != curr.currentIndex ||
+          prev.totalAyahs != curr.totalAyahs ||
+          prev.isPlaying != curr.isPlaying ||
+          prev.reciterName != curr.reciterName,
       builder: (context, state) {
         if (state.isIdle) return const SizedBox.shrink();
 
@@ -65,12 +84,7 @@ class PersistentAudioPlayer extends StatelessWidget {
                           children: [
                             Text(
                               state.surahName ?? '',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'QuranFont',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: _playerTitleStyle,
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
@@ -78,10 +92,7 @@ class PersistentAudioPlayer extends StatelessWidget {
                                 (state.currentIndex + 1).toString(),
                                 state.totalAyahs.toString(),
                               ])} · ${state.reciterName ?? reciter.nameAr}',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                              ),
+                              style: _playerSubtitleStyle,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],

@@ -171,8 +171,9 @@ class _HomeView extends StatelessWidget {
                     crossAxisSpacing: 14,
                     mainAxisSpacing: 14,
                   ),
-                  delegate: SliverChildListDelegate(
-                    _quickItems(context, l10n),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _buildQuickCard(context, l10n, index),
+                    childCount: _quickAccessItemCount,
                   ),
                 ),
               ),
@@ -184,61 +185,67 @@ class _HomeView extends StatelessWidget {
     );
   }
 
-  List<Widget> _quickItems(
-      BuildContext context, AppLocalizations l10n) {
-    final isAr = l10n.locale.languageCode == 'ar';
-    final items = [
-      (
-        icon: Icons.task_alt_rounded,
-        label: isAr ? 'وِردي' : 'My Wird',
-        route: '/wird',
-        color: AppColors.teal,
-      ),
-      (
-        icon: Icons.groups_rounded,
-        label: isAr ? 'المجموعات' : 'Groups',
-        route: '/groups',
-        color: AppColors.violet,
-      ),
-      (
-        icon: Icons.menu_book_rounded,
-        label: l10n.translate('readQuran'),
-        route: '/quran',
-        color: AppColors.emerald,
-      ),
-      (
-        icon: Icons.headphones_rounded,
-        label: isAr ? 'استماع القرآن' : 'Quran Audio',
-        route: '/quran-audio',
-        color: AppColors.teal,
-      ),
-      (
-        icon: Icons.explore_rounded,
-        label: l10n.translate('qiblaCompass'),
-        route: '/qibla',
-        color: AppColors.sky,
-      ),
-      (
-        icon: Icons.menu_book_rounded,
-        label: l10n.translate('hadith'),
-        route: '/hadith',
-        color: AppColors.indigo,
-      ),
-      // (
-      //   icon: Icons.mosque_rounded,
-      //   label: l10n.translate('mosqueFinder'),
-      //   route: '/mosque',
-      //   color: AppColors.amber,
-      // ),
-    ];
+  static const int _quickAccessItemCount = 6;
 
-    return items
-        .map((e) => QuickCard(
-              icon: e.icon,
-              label: e.label,
-              accentColor: e.color,
-              onTap: () => context.push(e.route),
-            ))
-        .toList();
+  QuickCard _buildQuickCard(
+      BuildContext context, AppLocalizations l10n, int index) {
+    final isAr = l10n.locale.languageCode == 'ar';
+    final (icon, label, route, color) = _quickAccessData(index, l10n, isAr);
+    return QuickCard(
+      icon: icon,
+      label: label,
+      accentColor: color,
+      onTap: () => context.push(route),
+    );
+  }
+
+  static (IconData, String, String, Color) _quickAccessData(
+      int index, AppLocalizations l10n, bool isAr) {
+    switch (index) {
+      case 0:
+        return (
+          Icons.task_alt_rounded,
+          isAr ? 'وِردي' : 'My Wird',
+          '/wird',
+          AppColors.teal,
+        );
+      case 1:
+        return (
+          Icons.groups_rounded,
+          isAr ? 'المجموعات' : 'Groups',
+          '/groups',
+          AppColors.violet,
+        );
+      case 2:
+        return (
+          Icons.menu_book_rounded,
+          l10n.translate('readQuran'),
+          '/quran',
+          AppColors.emerald,
+        );
+      case 3:
+        return (
+          Icons.headphones_rounded,
+          isAr ? 'استماع القرآن' : 'Quran Audio',
+          '/quran-audio',
+          AppColors.teal,
+        );
+      case 4:
+        return (
+          Icons.explore_rounded,
+          l10n.translate('qiblaCompass'),
+          '/qibla',
+          AppColors.sky,
+        );
+      case 5:
+        return (
+          Icons.menu_book_rounded,
+          l10n.translate('hadith'),
+          '/hadith',
+          AppColors.indigo,
+        );
+      default:
+        return (Icons.help_outline, '', '/', AppColors.teal);
+    }
   }
 }

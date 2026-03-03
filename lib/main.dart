@@ -35,7 +35,7 @@ void main() async {
   runApp(
     ValueListenableBuilder<int>(
       valueListenable: appRestartKey,
-      builder: (_, key, __) => WirdApp(key: ValueKey(key)),
+      builder: (context, key, child) => WirdApp(key: ValueKey(key)),
     ),
   );
 }
@@ -54,17 +54,17 @@ class WirdApp extends StatelessWidget {
         BlocProvider.value(value: sl<WirdCubit>()),
       ],
       child: BlocBuilder<SettingsCubit, SettingsState>(
+        buildWhen: (prev, curr) =>
+            prev.locale != curr.locale || prev.themeMode != curr.themeMode,
         builder: (context, state) {
-          final s = state as SettingsState?;
-          if (s == null) return const SizedBox.shrink();
-          final isRtl = s.locale.languageCode == 'ar';
+          final isRtl = state.locale.languageCode == 'ar';
           return MaterialApp.router(
             title: "Wird",
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: s.themeMode,
-            locale: s.locale,
+            themeMode: state.themeMode,
+            locale: state.locale,
             routerConfig: _appRouter,
             localizationsDelegates: const [
               AppLocalizations.delegate,
@@ -82,10 +82,16 @@ class WirdApp extends StatelessWidget {
                 children: [
                   child!,
                   BlocBuilder<AudioPlayerCubit, AudioPlaybackState>(
-                    buildWhen: (prev, curr) => prev.isIdle != curr.isIdle,
+                    buildWhen: (prev, curr) =>
+                        prev.isIdle != curr.isIdle ||
+                        prev.isPlaying != curr.isPlaying,
                     builder: (context, state) {
-                      if (!state.isPlaying) return const SizedBox.shrink();
-                      return const PersistentAudioPlayer();
+                      if (state.isIdle || !state.isPlaying) {
+                        return const SizedBox.shrink();
+                      }
+                      return RepaintBoundary(
+                        child: const PersistentAudioPlayer(),
+                      );
                     },
                   ),
                 ],

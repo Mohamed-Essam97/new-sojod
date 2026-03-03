@@ -9,6 +9,7 @@ import '../../../quran/domain/repositories/quran_repository.dart';
 import '../../../reciters/domain/entities/reciter.dart';
 import '../../../reciters/domain/repositories/reciter_repository.dart';
 import '../../../reciters/presentation/widgets/reciter_selection_sheet.dart';
+import '../../domain/entities/playback_state.dart';
 import '../cubit/audio_player_cubit.dart';
 import '../widgets/persistent_audio_player.dart';
 
@@ -59,23 +60,31 @@ class QuranAudioPlayerScreen extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
-                  itemCount: surahs.length,
-                  itemBuilder: (context, i) {
-                    final s = surahs[i];
-                    return Padding(
-                      key: ValueKey<int>(s.number),
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _SurahRow(
-                        number: s.number,
-                        nameAr: s.nameAr,
-                        nameEn: s.nameEn,
-                        ayahCount: s.ayahCount,
-                        isDark: isDark,
-                        isAr: isAr,
-                        onTap: () => context.read<AudioPlayerCubit>().playSurah(s.number),
-                      ),
+                child: BlocSelector<AudioPlayerCubit, AudioPlaybackState, int?>(
+                  selector: (state) => state.currentSurah,
+                  builder: (context, currentSurah) {
+                    return ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+                      itemCount: surahs.length,
+                      itemBuilder: (context, i) {
+                        final s = surahs[i];
+                        return Padding(
+                          key: ValueKey<int>(s.number),
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _SurahRow(
+                            number: s.number,
+                            nameAr: s.nameAr,
+                            nameEn: s.nameEn,
+                            ayahCount: s.ayahCount,
+                            isDark: isDark,
+                            isAr: isAr,
+                            isCurrent: currentSurah == s.number,
+                            onTap: () => context
+                                .read<AudioPlayerCubit>()
+                                .playSurah(s.number),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -150,7 +159,7 @@ class _ReciterCard extends StatelessWidget {
                           width: 48,
                           height: 48,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _avatarPlaceholder(),
+                          errorBuilder: (context, error, stackTrace) => _avatarPlaceholder(),
                         )
                       : _avatarPlaceholder(),
                 ),
@@ -211,6 +220,7 @@ class _SurahRow extends StatelessWidget {
     required this.ayahCount,
     required this.isDark,
     required this.isAr,
+    required this.isCurrent,
     required this.onTap,
   });
 
@@ -220,12 +230,11 @@ class _SurahRow extends StatelessWidget {
   final int ayahCount;
   final bool isDark;
   final bool isAr;
+  final bool isCurrent;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AudioPlayerCubit>().state;
-    final isCurrent = state.currentSurah == number;
 
     return Material(
       color: isDark ? AppColors.darkCard : Colors.white,
