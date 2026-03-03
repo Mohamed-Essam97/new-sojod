@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../domain/entities/user_entity.dart';
@@ -15,17 +14,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required FirebaseAuth firebaseAuth,
     required FirebaseFirestore firestore,
     required GoogleSignIn googleSignIn,
-    required FacebookAuth facebookAuth,
   })  : _firebaseAuth = firebaseAuth,
         _firestore = firestore,
         _googleSignIn = googleSignIn,
-        _facebookAuth = facebookAuth,
         _storage = FirebaseStorage.instance;
 
   final FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
-  final FacebookAuth _facebookAuth;
   final FirebaseStorage _storage;
 
   @override
@@ -60,43 +56,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  @override
-  Future<UserEntity?> signInWithFacebook() async {
-    try {
-      final LoginResult loginResult = await _facebookAuth.login(
-        permissions: ['email', 'public_profile'],
-      );
-
-      if (loginResult.status != LoginStatus.success) {
-        return null;
-      }
-
-      final accessToken = loginResult.accessToken;
-      if (accessToken == null) return null;
-
-      final credential = FacebookAuthProvider.credential(accessToken.token);
-
-      final userCredential = await _firebaseAuth.signInWithCredential(credential);
-      final firebaseUser = userCredential.user;
-      
-      if (firebaseUser == null) return null;
-
-      final userData = await _facebookAuth.getUserData();
-
-      final userModel = UserModel.fromFirebaseUser(
-        firebaseUser.uid,
-        firebaseUser.displayName ?? userData['name'] ?? 'User',
-        firebaseUser.email ?? userData['email'] ?? '',
-        firebaseUser.photoURL ?? userData['picture']?['data']?['url'],
-      );
-
-      await _saveUserToFirestore(userModel);
-      return userModel;
-    } catch (e) {
-      throw Exception('Facebook sign in failed: $e');
-    }
-  }
-
   Future<void> _saveUserToFirestore(UserModel user) async {
     final userDoc = _firestore.collection('users').doc(user.uid);
     final docSnapshot = await userDoc.get();
@@ -116,7 +75,6 @@ class AuthRepositoryImpl implements AuthRepository {
     await Future.wait([
       _firebaseAuth.signOut(),
       _googleSignIn.signOut(),
-      _facebookAuth.logOut(),
     ]);
   }
 

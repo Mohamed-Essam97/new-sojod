@@ -3,12 +3,12 @@
 ## ✅ Completed Features
 
 ### 1. Firebase Authentication (100%)
-- ✅ Firebase Auth setup with Google & Facebook providers
+- ✅ Firebase Auth setup with Google provider
 - ✅ User entity & model with Firestore integration
 - ✅ Auth repository with sign in/out capabilities
-- ✅ Use cases: SignInWithGoogle, SignInWithFacebook, SignOut, GetCurrentUser, UpdateProfile
+- ✅ Use cases: SignInWithGoogle, SignOut, GetCurrentUser, UpdateProfile
 - ✅ AuthCubit with state management
-- ✅ Login page with Google & Facebook buttons
+- ✅ Login page with Google button
 - ✅ Profile page with edit capabilities
 - ✅ Auth routing & navigation
 - ✅ Splash page with auth check
@@ -211,7 +211,7 @@ firebase deploy --only firestore:rules
 ---
 
 ## 📝 Notes
-- All dependencies are installed (`firebase_auth`, `cloud_firestore`, `google_sign_in`, `flutter_facebook_auth`)
+- All dependencies are installed (`firebase_auth`, `cloud_firestore`, `google_sign_in`)
 - Dependency injection is set up for Auth & Wird
 - Routing is configured for all implemented pages
 - The app structure follows Clean Architecture principles
@@ -221,7 +221,7 @@ firebase deploy --only firestore:rules
 ## 🎯 MVP Status: 70% Complete
 
 **Ready for testing:**
-- ✅ Authentication (Google/Facebook)
+- ✅ Authentication (Google)
 - ✅ User Profile Management
 - ✅ Daily Wird Tracking
 - ✅ Wird Dashboard UI

@@ -129,7 +129,7 @@ isAuthenticated
 ```
 1. يفتح التطبيق
 2. Splash → يفحص permissions
-3. يسجل دخول (Google/Facebook)
+3. يسجل دخول (Google)
 4. جميع الميزات متاحة (بما فيها Wird & Groups)
 ```
 

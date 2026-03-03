@@ -115,16 +115,6 @@ class LoginPage extends StatelessWidget {
                         textColor: Colors.black87,
                         onPressed: () => context.read<AuthCubit>().signInWithGoogleMethod(),
                       ),
-                      const SizedBox(height: 16),
-                      _SignInButton(
-                        icon: Icons.facebook_rounded,
-                        label: l10n.locale.languageCode == 'ar'
-                            ? 'تسجيل الدخول بحساب Facebook'
-                            : 'Continue with Facebook',
-                        backgroundColor: const Color(0xFF1877F2),
-                        textColor: Colors.white,
-                        onPressed: () => context.read<AuthCubit>().signInWithFacebookMethod(),
-                      ),
                       const SizedBox(height: 32),
                       Text(
                         l10n.locale.languageCode == 'ar'

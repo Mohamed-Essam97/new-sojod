@@ -15,7 +15,6 @@ Before deploying, ensure you have:
 
 3. **Authentication providers enabled in Firebase Console**
    - Google Sign-In
-   - Facebook Sign-In
 
 ## 🔐 Step 1: Deploy Firestore Security Rules
 
@@ -49,15 +48,7 @@ You should see the rules from `firestore.rules` file.
 2. Enable Google provider
 3. Add your support email
 
-### 2.2 Enable Facebook Sign-In
-1. Create Facebook App at https://developers.facebook.com
-2. Get App ID and App Secret
-3. In Firebase Console → Authentication → Sign-in method
-4. Enable Facebook provider
-5. Enter Facebook App ID and App Secret
-6. Copy OAuth redirect URI and add to Facebook App settings
-
-### 2.3 Android Configuration
+### 2.2 Android Configuration
 
 **Add SHA-1 & SHA-256 fingerprints:**
 
@@ -76,19 +67,10 @@ Add fingerprints to Firebase Console → Project Settings → Android app
 <uses-permission android:name="android.permission.INTERNET"/>
 ```
 
-### 2.4 iOS Configuration
+### 2.3 iOS Configuration
 
 **Add URL schemes** (already done in `Info.plist`):
 - Google Sign-In: `com.googleusercontent.apps.{REVERSED_CLIENT_ID}`
-- Facebook: `fb{FACEBOOK_APP_ID}`
-
-**Update `Info.plist`** with Facebook App ID (if not done):
-```xml
-<key>FacebookAppID</key>
-<string>YOUR_FACEBOOK_APP_ID</string>
-<key>FacebookDisplayName</key>
-<string>Wird</string>
-```
 
 ---
 
@@ -112,7 +94,6 @@ flutter run -d android
 
 **Authentication:**
 - ✅ Sign in with Google
-- ✅ Sign in with Facebook
 - ✅ Profile update
 - ✅ Sign out
 
@@ -181,7 +162,6 @@ flutter build ios --release
 - [ ] Firestore rules deployed
 - [ ] Authentication providers configured
 - [ ] API keys restricted in Google Cloud Console
-- [ ] Facebook App reviewed and published
 - [ ] SSL pinning enabled (optional, advanced)
 - [ ] ProGuard rules configured for Android (optional)
 
@@ -207,11 +187,6 @@ firebase deploy --only analytics
 
 ### Issue: "Google Sign-In failed"
 **Solution:** Ensure SHA-1 fingerprint is added to Firebase Console
-
-### Issue: "Facebook Sign-In failed"
-**Solution:** 
-- Check Facebook App ID in Firebase
-- Verify OAuth redirect URI in Facebook App settings
 
 ### Issue: "Permission denied" in Firestore
 **Solution:** 

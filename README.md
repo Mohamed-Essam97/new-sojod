@@ -36,7 +36,7 @@
 ## ✨ المزايا / Features
 
 ### 🔐 المصادقة / Authentication
-- تسجيل الدخول بـ Google و Facebook
+- تسجيل الدخول بـ Google
 - إدارة الملف الشخصي
 - حفظ البيانات في Firestore
 
@@ -133,7 +133,7 @@ flutter run
    - `google-services.json` → `android/app/`
    - `GoogleService-Info.plist` → `ios/Runner/`
 
-4. Enable Authentication providers (Google, Facebook)
+4. Enable Authentication providers (Google)
 
 5. Deploy Firestore Security Rules:
    ```bash

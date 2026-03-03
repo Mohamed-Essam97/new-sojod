@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/get_current_user.dart';
-import '../../domain/usecases/sign_in_with_facebook.dart';
 import '../../domain/usecases/sign_in_with_google.dart';
 import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/update_profile.dart';
@@ -14,14 +13,12 @@ import 'auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
     required SignInWithGoogle signInWithGoogle,
-    required SignInWithFacebook signInWithFacebook,
     required SignOut signOut,
     required GetCurrentUser getCurrentUser,
     required UpdateProfile updateProfile,
     required UploadProfileImage uploadProfileImage,
     required AuthRepository authRepository,
   })  : _signInWithGoogle = signInWithGoogle,
-        _signInWithFacebook = signInWithFacebook,
         _signOut = signOut,
         _getCurrentUser = getCurrentUser,
         _updateProfile = updateProfile,
@@ -38,7 +35,6 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   final SignInWithGoogle _signInWithGoogle;
-  final SignInWithFacebook _signInWithFacebook;
   final SignOut _signOut;
   final GetCurrentUser _getCurrentUser;
   final UpdateProfile _updateProfile;
@@ -69,20 +65,6 @@ class AuthCubit extends Cubit<AuthState> {
         emit(AuthAuthenticated(user));
       } else {
         emit(const AuthError('Google sign in cancelled'));
-      }
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
-  }
-
-  Future<void> signInWithFacebookMethod() async {
-    emit(const AuthLoading());
-    try {
-      final user = await _signInWithFacebook();
-      if (user != null) {
-        emit(AuthAuthenticated(user));
-      } else {
-        emit(const AuthError('Facebook sign in cancelled'));
       }
     } catch (e) {
       emit(AuthError(e.toString()));

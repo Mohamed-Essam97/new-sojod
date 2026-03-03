@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -14,7 +13,6 @@ import '../../features/audio_player/presentation/cubit/audio_player_cubit.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/usecases/get_current_user.dart';
-import '../../features/auth/domain/usecases/sign_in_with_facebook.dart';
 import '../../features/auth/domain/usecases/sign_in_with_google.dart';
 import '../../features/auth/domain/usecases/sign_out.dart';
 import '../../features/auth/domain/usecases/update_profile.dart';
@@ -80,7 +78,6 @@ Future<void> initInjection() async {
           '405620285471-j6b6ar3747v01uopsf2hlsd4a6195i1i.apps.googleusercontent.com',
     ),
   );
-  sl.registerLazySingleton<FacebookAuth>(() => FacebookAuth.instance);
 
   // Settings
   sl.registerLazySingleton<SettingsRepository>(
@@ -159,11 +156,9 @@ Future<void> initInjection() async {
       firebaseAuth: sl(),
       firestore: sl(),
       googleSignIn: sl(),
-      facebookAuth: sl(),
     ),
   );
   sl.registerLazySingleton<SignInWithGoogle>(() => SignInWithGoogle(sl()));
-  sl.registerLazySingleton<SignInWithFacebook>(() => SignInWithFacebook(sl()));
   sl.registerLazySingleton<SignOut>(() => SignOut(sl()));
   sl.registerLazySingleton<GetCurrentUser>(() => GetCurrentUser(sl()));
   sl.registerLazySingleton<UpdateProfile>(() => UpdateProfile(sl()));
@@ -171,7 +166,6 @@ Future<void> initInjection() async {
   sl.registerLazySingleton<AuthCubit>(
     () => AuthCubit(
       signInWithGoogle: sl(),
-      signInWithFacebook: sl(),
       signOut: sl(),
       getCurrentUser: sl(),
       updateProfile: sl(),

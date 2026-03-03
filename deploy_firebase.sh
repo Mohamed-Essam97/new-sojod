@@ -127,7 +127,7 @@ deploy_android() {
 🚀 New Features:
 • Daily Wird tracking (Quran, Adhkar, Tasbeeh)
 • Groups & Invite system
-• Firebase Authentication (Google/Facebook)
+• Firebase Authentication (Google)
 • Skip login option
 • Real-time progress updates
 
@@ -153,7 +153,7 @@ deploy_ios() {
 🚀 New Features:
 • Daily Wird tracking (Quran, Adhkar, Tasbeeh)
 • Groups & Invite system
-• Firebase Authentication (Google/Facebook)
+• Firebase Authentication (Google)
 • Skip login option
 • Real-time progress updates
 
