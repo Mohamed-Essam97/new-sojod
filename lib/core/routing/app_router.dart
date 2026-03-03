@@ -22,6 +22,9 @@ import '../../features/wird/presentation/pages/wird_dashboard_page.dart';
 import '../../features/groups/presentation/pages/groups_list_page.dart';
 import '../../features/groups/presentation/pages/group_details_page.dart';
 import '../../features/groups/presentation/pages/join_group_page.dart';
+import '../../features/hadith/presentation/pages/hadith_page.dart';
+import '../../features/hadith/presentation/pages/hadith_chapter_page.dart';
+import '../../features/hadith/presentation/pages/hadith_detail_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -122,6 +125,28 @@ GoRouter createAppRouter() {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return GroupDetailsPage(groupId: id);
+        },
+      ),
+      GoRoute(
+        path: '/hadith',
+        builder: (context, state) => const HadithPage(),
+      ),
+      GoRoute(
+        path: '/hadith/chapter',
+        builder: (context, state) {
+          final collectionId = state.uri.queryParameters['collectionId'] ?? '';
+          final chapterId = state.uri.queryParameters['chapterId'] ?? '';
+          return HadithChapterPage(
+            collectionId: collectionId,
+            chapterId: chapterId,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/hadith/detail',
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'] ?? '';
+          return HadithDetailPage(hadithId: id);
         },
       ),
     ],

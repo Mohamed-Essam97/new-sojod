@@ -86,6 +86,7 @@ flutter:
     - assets/
     - assets/icons/
     - assets/logo/
+    - assets/hadith/
 
   fonts:
     - family: QuranFont

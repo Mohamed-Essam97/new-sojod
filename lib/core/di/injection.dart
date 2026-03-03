@@ -57,6 +57,10 @@ import '../../features/groups/domain/usecases/get_group_members.dart';
 import '../../features/groups/domain/usecases/get_user_groups.dart';
 import '../../features/groups/domain/usecases/join_group.dart';
 import '../../features/groups/presentation/cubit/group_cubit.dart';
+import '../../features/hadith/data/datasources/hadith_local_datasource.dart';
+import '../../features/hadith/data/repositories/hadith_repository_impl.dart';
+import '../../features/hadith/domain/repositories/hadith_repository.dart';
+import '../../features/hadith/presentation/cubit/hadith_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -68,6 +72,7 @@ Future<void> initInjection() async {
   await Hive.initFlutter();
   await Hive.openBox('adhkar_progress');
   await Hive.openBox('bookmarks');
+  await Hive.openBox('hadith_favorites');
 
   // Firebase
   sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
@@ -210,4 +215,14 @@ Future<void> initInjection() async {
       groupRepository: sl(),
     ),
   );
+
+  // Hadith (offline)
+  sl.registerLazySingleton<HadithLocalDatasource>(() => HadithLocalDatasource());
+  sl.registerLazySingleton<HadithRepository>(
+    () => HadithRepositoryImpl(
+      datasource: sl(),
+      favoritesBox: Hive.box('hadith_favorites'),
+    ),
+  );
+  sl.registerFactory<HadithCubit>(() => HadithCubit(sl()));
 }

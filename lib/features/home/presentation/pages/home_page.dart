@@ -218,6 +218,12 @@ class _HomeView extends StatelessWidget {
         route: '/qibla',
         color: AppColors.sky,
       ),
+      (
+        icon: Icons.menu_book_rounded,
+        label: l10n.translate('hadith'),
+        route: '/hadith',
+        color: AppColors.indigo,
+      ),
       // (
       //   icon: Icons.mosque_rounded,
       //   label: l10n.translate('mosqueFinder'),
